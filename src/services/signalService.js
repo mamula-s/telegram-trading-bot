@@ -48,10 +48,25 @@ const deleteSignal = async (id) => {
   }
 };
 
+const getRecentSignals = async (subscriptionType, limit = 5) => {
+    try {
+      let query = {};
+      if (subscriptionType !== 'vip') {
+        query = { type: 'spot' }; // Припустимо, що не-VIP користувачі отримують тільки спотові сигнали
+      }
+      return await Signal.find(query).sort({ createdAt: -1 }).limit(limit);
+    } catch (error) {
+      console.error('Помилка отримання останніх сигналів:', error);
+      throw error;
+    }
+  };
+  
+
 module.exports = {
   createSignal,
   getAllSignals,
   getSignalById,
   updateSignal,
-  deleteSignal
+  deleteSignal,
+  getRecentSignals
 };

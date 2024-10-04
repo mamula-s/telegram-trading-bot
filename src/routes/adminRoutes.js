@@ -10,7 +10,7 @@ const botService = require('../services/botService');
 
 // Базова аутентифікація
 const auth = basicAuth({
-    users: { 'admin': 'password' }, // Замініть на реальні дані
+    users: { 'admin': 'password' }, 
     challenge: true,
     realm: 'Admin Panel'
 });

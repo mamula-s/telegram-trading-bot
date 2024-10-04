@@ -18,6 +18,31 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// Маршрут для Web App
+app.get('/webapp', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
+});
+
+// API маршрути для Web App
+app.get('/api/portfolio', async (req, res) => {
+    // TODO: Реалізувати отримання даних портфоліо
+    res.json([
+        { asset: 'BTC', amount: 0.5, value: 15000 },
+        { asset: 'ETH', amount: 5, value: 10000 },
+        { asset: 'USDT', amount: 5000, value: 5000 }
+    ]);
+});
+
+app.get('/api/signals', async (req, res) => {
+    try {
+        const signals = await signalService.getRecentSignals('vip', 5);
+        res.json(signals);
+    } catch (error) {
+        console.error('Помилка отримання сигналів:', error);
+        res.status(500).json({ error: 'Внутрішня помилка сервера' });
+    }
+});
+
 // Налаштування бота
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
@@ -70,6 +95,46 @@ bot.onText(/\/status/, async (msg) => {
   } else {
     bot.sendMessage(chatId, 'У вас немає активної підписки. Використовуйте /subscribe для оформлення.');
   }
+});
+
+bot.onText(/\/signals/, async (msg) => {
+    const chatId = msg.chat.id;
+    const user = await userService.getUserByTelegramId(msg.from.id.toString());
+    
+    if (user && user.isSubscribed) {
+      const signals = await signalService.getRecentSignals(user.subscriptionType);
+      let message = 'Останні сигнали:\n\n';
+      signals.forEach(signal => {
+        message += `${signal.type.toUpperCase()} | ${signal.pair} | ${signal.direction}\n`;
+        message += `Вхід: ${signal.entryPrice} | TP: ${signal.takeProfit} | SL: ${signal.stopLoss}\n\n`;
+      });
+      bot.sendMessage(chatId, message);
+    } else {
+      bot.sendMessage(chatId, 'Для отримання сигналів потрібна активна підписка. Використовуйте /subscribe для оформлення.');
+    }
+  });
+  
+  bot.onText(/\/portfolio/, async (msg) => {
+    const chatId = msg.chat.id;
+    // TODO: Реалізувати логіку управління портфелем
+    bot.sendMessage(chatId, 'Функція управління портфелем знаходиться в розробці.');
+  });
+  
+  bot.onText(/\/settings/, async (msg) => {
+    const chatId = msg.chat.id;
+    // TODO: Реалізувати логіку налаштувань користувача
+    bot.sendMessage(chatId, 'Налаштування користувача:\n1. Частота сигналів: Всі\n2. Сповіщення: Увімкнено');
+});
+
+  bot.onText(/\/webapp/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, 'Відкрити Web App', {
+        reply_markup: {
+            inline_keyboard: [[
+                { text: 'Відкрити Web App', web_app: { url: `${process.env.BASE_URL}/webapp` } }
+            ]]
+        }
+    });
 });
 
 // Адмін-панель роути
