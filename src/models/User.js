@@ -1,53 +1,24 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../database/sequelize');
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
   telegramId: {
-    type: String,
-    required: true,
-    unique: true,
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
-  username: {
-    type: String,
-    required: false,
-  },
-  firstName: {
-    type: String,
-    required: false,
-  },
-  lastName: {
-    type: String,
-    required: false,
-  },
+  username: DataTypes.STRING,
+  firstName: DataTypes.STRING,
+  lastName: DataTypes.STRING,
   isSubscribed: {
-    type: Boolean,
-    default: false,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   subscriptionType: {
-    type: String,
-    enum: ['free', 'premium', 'vip'],
-    default: 'free',
+    type: DataTypes.STRING,
+    defaultValue: 'free'
   },
-  referralCode: {
-    type: String,
-    unique: true,
-    sparse: true,
-  },
-  referredBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  discount: {
-    type: Number,
-    default: 0,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  subscriptionEndDate: {
-    type: Date,
-    default: null
-  },
+  subscriptionEndDate: DataTypes.DATE
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

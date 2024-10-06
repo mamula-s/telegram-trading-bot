@@ -3,27 +3,21 @@ const { privilegedUserIds, developerId } = require('../config/privileges');
 
 const createUser = async (userData) => {
   try {
-    let user = await User.findOne({ telegramId: userData.telegramId });
-    if (user) {
-      user = await User.findOneAndUpdate(
-        { telegramId: userData.telegramId },
-        userData,
-        { new: true, runValidators: true }
-      );
-    } else {
-      user = new User(userData);
-      await user.save();
-    }
-    return await updateUserSubscription(userData.telegramId);
+    const [user, created] = await User.findOrCreate({
+      where: { telegramId: userData.telegramId },
+      defaults: userData
+    });
+    return user;
   } catch (error) {
     console.error('Помилка створення/оновлення користувача:', error);
     throw error;
   }
 };
 
+
 const getUserByTelegramId = async (telegramId) => {
   try {
-    return await User.findOne({ telegramId });
+    return await User.findOne({ where: { telegramId } });
   } catch (error) {
     console.error('Помилка отримання користувача:', error);
     throw error;

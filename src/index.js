@@ -3,7 +3,7 @@ const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 
-const connectDB = require('./database/connection');
+const { sequelize, connectDB } = require('./database/sequelize');
 const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
@@ -44,9 +44,20 @@ app.get('/api/signals', async (req, res) => {
 });
 
 // Налаштування бота
-const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT } });
+const bot = new TelegramBot(process.env.BOT_TOKEN, {
+  webHook: {
+    port: process.env.PORT
+  }
+});
 
+// Налаштування webhook
 bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
+
+// Обробка webhook
+app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
 
 // Обробка команд бота
 bot.onText(/\/start/, async (msg) => {
@@ -71,7 +82,7 @@ bot.onText(/\/start/, async (msg) => {
 
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Доступні команди:\n/start - Почати\n/help - Допомога\n/subscribe - Оформити підписку\n/status - Перевірити статус підписки');
+  bot.sendMessage(chatId, 'Доступні команди:\n/start - Почати\n/help - Допомога\n/subscribe - Оформити підписку\n/status - Перевірити статус підписки\n/signals - Отримати сигнали\n/portfolio - Переглянути портфоліо\n/settings - Налаштування\n/webapp - Відкрити веб-додаток');
 });
 
 bot.onText(/\/subscribe/, async (msg) => {
@@ -114,18 +125,18 @@ bot.onText(/\/signals/, async (msg) => {
     } else {
       bot.sendMessage(chatId, 'Для отримання сигналів потрібна активна підписка. Використовуйте /subscribe для оформлення.');
     }
-  });
+});
   
-  bot.onText(/\/portfolio/, async (msg) => {
-    const chatId = msg.chat.id;
-    // TODO: Реалізувати логіку управління портфелем
-    bot.sendMessage(chatId, 'Функція управління портфелем знаходиться в розробці.');
-  });
+bot.onText(/\/portfolio/, async (msg) => {
+  const chatId = msg.chat.id;
+  // TODO: Реалізувати логіку управління портфелем
+  bot.sendMessage(chatId, 'Функція управління портфелем знаходиться в розробці.');
+});
   
-  bot.onText(/\/settings/, async (msg) => {
-    const chatId = msg.chat.id;
-    // TODO: Реалізувати логіку налаштувань користувача
-    bot.sendMessage(chatId, 'Налаштування користувача:\n1. Частота сигналів: Всі\n2. Сповіщення: Увімкнено');
+bot.onText(/\/settings/, async (msg) => {
+  const chatId = msg.chat.id;
+  // TODO: Реалізувати логіку налаштувань користувача
+  bot.sendMessage(chatId, 'Налаштування користувача:\n1. Частота сигналів: Всі\n2. Сповіщення: Увімкнено');
 });
 
 bot.onText(/\/webapp/, (msg) => {
@@ -141,8 +152,22 @@ bot.onText(/\/webapp/, (msg) => {
   });
 });
 
+// Обробка помилок бота
+bot.on('polling_error', (error) => {
+  console.error('Помилка поллінгу бота:', error);
+});
+
+bot.on('webhook_error', (error) => {
+  console.error('Помилка вебхука бота:', error);
+});
+
 // Адмін-панель роути
 app.use('/admin', adminRoutes);
+
+// Маршрут для перевірки стану сервера
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 // Обробка помилок
 app.use((err, req, res, next) => {
@@ -151,9 +176,18 @@ app.use((err, req, res, next) => {
 });
 
 // Підключення до бази даних і запуск сервера
-connectDB().then(() => {
-  // Тут запускайте ваш сервер або інші операції
-  console.log('База даних підключена, запускаємо сервер...');
+connectDB().then(async () => {
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('База даних синхронізована');
+    
+    app.listen(port, () => {
+      console.log(`Сервер запущено на порту ${port}`);
+    });
+  } catch (error) {
+    console.error('Помилка синхронізації бази даних:', error);
+    process.exit(1);
+  }
 }).catch(error => {
   console.error('Не вдалося підключитися до бази даних:', error);
   process.exit(1);
@@ -173,19 +207,28 @@ const broadcastSignal = async (signal) => {
 
 app.post('/api/settings', async (req, res) => {
   const { frequency, notificationsEnabled } = req.body;
-  const userId = req.headers['x-telegram-user-id']; // Припустимо, що ви передаєте ID користувача в заголовку
+  const userId = req.headers['x-telegram-user-id'];
 
   try {
-      // TODO: Зберегти налаштування в базі даних
-      // await userService.updateSettings(userId, { frequency, notificationsEnabled });
-      res.json({ success: true, message: 'Налаштування збережено' });
+    // TODO: Зберегти налаштування в базі даних
+    // await userService.updateSettings(userId, { frequency, notificationsEnabled });
+    res.json({ success: true, message: 'Налаштування збережено' });
   } catch (error) {
-      console.error('Помилка збереження налаштувань:', error);
-      res.status(500).json({ success: false, message: 'Помилка збереження налаштувань' });
+    console.error('Помилка збереження налаштувань:', error);
+    res.status(500).json({ success: false, message: 'Помилка збереження налаштувань' });
   }
 });
 
-// Експорт функції broadcastSignal для використання в інших частинах додатку
+// Обробка SIGTERM для graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM отримано. Закриваємо сервер та з'єднання з базою даних.');
+  await sequelize.close();
+  process.exit(0);
+});
+
+// Експорт для можливого використання в тестах
 module.exports = {
+  app,
+  bot,
   broadcastSignal
 };

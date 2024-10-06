@@ -1,48 +1,32 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../database/sequelize');
 
-const signalSchema = new mongoose.Schema({
+const Signal = sequelize.define('Signal', {
   type: {
-    type: String,
-    enum: ['futures', 'spot'],
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   pair: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   direction: {
-    type: String,
-    enum: ['buy', 'sell'],
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   entryPrice: {
-    type: Number,
-    required: true
+    type: DataTypes.FLOAT,
+    allowNull: false
   },
   takeProfit: {
-    type: Number,
-    required: true
+    type: DataTypes.FLOAT,
+    allowNull: false
   },
   stopLoss: {
-    type: Number,
-    required: true
+    type: DataTypes.FLOAT,
+    allowNull: false
   },
-  note: {
-    type: String,
-    required: false
-  },
-  imageUrl: {
-    type: String,
-    required: false
-  },
-  published: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  note: DataTypes.TEXT
 });
 
-module.exports = mongoose.model('Signal', signalSchema);
+module.exports = Signal;
