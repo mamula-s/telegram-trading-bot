@@ -45,6 +45,7 @@ app.get('/api/signals', async (req, res) => {
 
 // Налаштування бота
 const bot = new TelegramBot(process.env.BOT_TOKEN);
+
 bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
 
 
@@ -52,9 +53,11 @@ bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
 
 // Обробка webhook
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+  console.log('Запит вебхука отримано:', req.body);
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
+
 
 // Обробка команд бота
 bot.onText(/\/start/, async (msg) => {
