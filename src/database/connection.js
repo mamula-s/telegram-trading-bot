@@ -8,7 +8,7 @@ const connectDB = async () => {
     });
     console.log('Успішне підключення до бази даних MongoDB Atlas');
   } catch (error) {
-    console.error('Помилка підключення до бази даних:', error.message);
+    console.error('Помилка підключення до бази даних:', error);
     process.exit(1);
   }
 };
