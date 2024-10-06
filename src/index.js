@@ -44,14 +44,11 @@ app.get('/api/signals', async (req, res) => {
 });
 
 // Налаштування бота
-const bot = new TelegramBot(process.env.BOT_TOKEN, {
-  webHook: {
-    port: process.env.PORT
-  }
-});
-
-// Налаштування webhook
+const bot = new TelegramBot(process.env.BOT_TOKEN);
 bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
+
+
+
 
 // Обробка webhook
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
