@@ -2,14 +2,8 @@ let tg = window.Telegram.WebApp;
 
 tg.expand();
 
-tg.MainButton.text = "Закрити";
-tg.MainButton.show();
-
-tg.onEvent('mainButtonClicked', function(){
-  tg.close();
-});
-
 document.addEventListener('DOMContentLoaded', function() {
+    tg.ready();
     loadUserInfo();
     loadPortfolio();
     loadSignals();
@@ -18,14 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadUserInfo() {
     let userInfo = document.getElementById('user-info');
-    userInfo.innerHTML = `
-        <p>Користувач: ${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name}</p>
-        <p>Telegram ID: ${tg.initDataUnsafe.user.id}</p>
-    `;
+    if (tg.initDataUnsafe.user) {
+        userInfo.innerHTML = `
+            <p>Користувач: ${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name || ''}</p>
+            <p>Telegram ID: ${tg.initDataUnsafe.user.id}</p>
+        `;
+    } else {
+        userInfo.innerHTML = '<p>Інформація про користувача недоступна</p>';
+    }
 }
 
 function loadPortfolio() {
-    // TODO: Завантажити дані портфоліо з сервера
     let portfolioContent = document.getElementById('portfolio-content');
     portfolioContent.innerHTML = '<p>Завантаження портфоліо...</p>';
     
@@ -46,7 +43,6 @@ function loadPortfolio() {
 }
 
 function loadSignals() {
-    // TODO: Завантажити останні сигнали з сервера
     let signalsContent = document.getElementById('signals-content');
     signalsContent.innerHTML = '<p>Завантаження сигналів...</p>';
     
@@ -67,7 +63,6 @@ function loadSignals() {
 }
 
 function loadSettings() {
-    // TODO: Завантажити налаштування користувача
     let settingsContent = document.getElementById('settings-content');
     settingsContent.innerHTML = `
         <p>Частота сигналів: <select id="signal-frequency">
@@ -84,8 +79,32 @@ function saveSettings() {
     let frequency = document.getElementById('signal-frequency').value;
     let notificationsEnabled = document.getElementById('notifications-enabled').checked;
     
-    // TODO: Відправити налаштування на сервер
-    console.log('Збереження налаштувань:', { frequency, notificationsEnabled });
-    
-    tg.showAlert('Налаштування збережено');
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ frequency, notificationsEnabled }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        tg.showPopup({
+            title: 'Успіх',
+            message: 'Налаштування збережено',
+            buttons: [{ type: 'close' }]
+        });
+    })
+    .catch(error => {
+        console.error('Помилка збереження налаштувань:', error);
+        tg.showPopup({
+            title: 'Помилка',
+            message: 'Не вдалося зберегти налаштування',
+            buttons: [{ type: 'close' }]
+        });
+    });
 }
+
+// Додайте кнопку "Закрити" в верхньому правому куті
+tg.MainButton.setText('Закрити').show().onClick(function() {
+    tg.close();
+});

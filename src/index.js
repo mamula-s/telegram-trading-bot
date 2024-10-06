@@ -126,15 +126,17 @@ bot.onText(/\/signals/, async (msg) => {
     bot.sendMessage(chatId, 'Налаштування користувача:\n1. Частота сигналів: Всі\n2. Сповіщення: Увімкнено');
 });
 
-  bot.onText(/\/webapp/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Відкрити Web App', {
-        reply_markup: {
-            inline_keyboard: [[
-                { text: 'Відкрити Web App', web_app: { url: `${process.env.BASE_URL}/webapp` } }
-            ]]
-        }
-    });
+bot.onText(/\/webapp/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, 'Натисніть кнопку нижче, щоб відкрити Web App:', {
+      reply_markup: {
+          keyboard: [[
+              { text: 'Відкрити Trading Dashboard', web_app: { url: `${process.env.BASE_URL}/webapp` } }
+          ]],
+          resize_keyboard: true,
+          one_time_keyboard: false
+      }
+  });
 });
 
 // Адмін-панель роути
@@ -167,6 +169,20 @@ const broadcastSignal = async (signal) => {
     console.error('Помилка при розсилці сигналу:', error);
   }
 };
+
+app.post('/api/settings', async (req, res) => {
+  const { frequency, notificationsEnabled } = req.body;
+  const userId = req.headers['x-telegram-user-id']; // Припустимо, що ви передаєте ID користувача в заголовку
+
+  try {
+      // TODO: Зберегти налаштування в базі даних
+      // await userService.updateSettings(userId, { frequency, notificationsEnabled });
+      res.json({ success: true, message: 'Налаштування збережено' });
+  } catch (error) {
+      console.error('Помилка збереження налаштувань:', error);
+      res.status(500).json({ success: false, message: 'Помилка збереження налаштувань' });
+  }
+});
 
 // Експорт функції broadcastSignal для використання в інших частинах додатку
 module.exports = {
