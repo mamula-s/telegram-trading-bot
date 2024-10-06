@@ -8,6 +8,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
+const bot = new TelegramBot(process.env.BOT_TOKEN);
 
 const app = express();
 const port = process.env.PORT || 3000;
