@@ -221,7 +221,7 @@ app.post('/api/settings', async (req, res) => {
 
 // Обробка SIGTERM для graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM отримано. Закриваємо сервер та з'єднання з базою даних.');
+  console.log("SIGTERM отримано. Закриваємо сервер та з'єднання з базою даних.");
   await sequelize.close();
   process.exit(0);
 });
