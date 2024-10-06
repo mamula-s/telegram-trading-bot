@@ -44,7 +44,9 @@ app.get('/api/signals', async (req, res) => {
 });
 
 // Налаштування бота
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT } });
+
+bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
 
 // Обробка команд бота
 bot.onText(/\/start/, async (msg) => {
@@ -150,6 +152,7 @@ app.use((err, req, res, next) => {
 
 // Підключення до бази даних і запуск сервера
 connectDB().then(() => {
+  console.log('База даних підключена');
   app.listen(port, () => {
     console.log(`Сервер запущено на порту ${port}`);
   });
