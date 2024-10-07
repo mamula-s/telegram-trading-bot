@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../database/sequelize');
+const subscriptions = require('../config/subscriptions');
 
 const User = sequelize.define('User', {
   telegramId: {
@@ -10,13 +11,13 @@ const User = sequelize.define('User', {
   username: DataTypes.STRING,
   firstName: DataTypes.STRING,
   lastName: DataTypes.STRING,
-  isSubscribed: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
-  subscriptionType: {
-    type: DataTypes.STRING,
-    defaultValue: 'free'
+  subscriptions: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: [],
+    get() {
+      const rawValue = this.getDataValue('subscriptions');
+      return rawValue ? rawValue : [];
+    }
   },
   subscriptionEndDate: DataTypes.DATE
 });

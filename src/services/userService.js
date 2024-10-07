@@ -105,6 +105,52 @@ const subscribeUser = async (telegramId, subscriptionType, duration) => {
   }
 };
 
+const addSubscription = async (telegramId, subscriptionType) => {
+  const user = await User.findOne({ where: { telegramId } });
+  if (!user) throw new Error('Користувача не знайдено');
+
+  const userSubscriptions = user.subscriptions;
+  if (!userSubscriptions.includes(subscriptionType)) {
+    userSubscriptions.push(subscriptionType);
+  }
+
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + 1);  // підписка на 1 місяць
+
+  await user.update({
+    subscriptions: userSubscriptions,
+    subscriptionEndDate: endDate
+  });
+
+  return user;
+};
+
+const removeSubscription = async (telegramId, subscriptionType) => {
+  const user = await User.findOne({ where: { telegramId } });
+  if (!user) throw new Error('Користувача не знайдено');
+
+  const userSubscriptions = user.subscriptions.filter(sub => sub !== subscriptionType);
+
+  await user.update({
+    subscriptions: userSubscriptions,
+    subscriptionEndDate: userSubscriptions.length ? user.subscriptionEndDate : null
+  });
+
+  return user;
+};
+
+const getActiveSubscriptions = async (telegramId) => {
+  const user = await User.findOne({ where: { telegramId } });
+  if (!user) throw new Error('Користувача не знайдено');
+
+  if (new Date() > user.subscriptionEndDate) {
+    await user.update({ subscriptions: [], subscriptionEndDate: null });
+    return [];
+  }
+
+  return user.subscriptions;
+};
+
 module.exports = {
   createUser,
   getUserByTelegramId,
@@ -113,5 +159,8 @@ module.exports = {
   getSubscribedUsers,
   updateUserSubscription,
   checkAndUpdateSubscription,
-  subscribeUser
+  subscribeUser,
+  addSubscription,
+  removeSubscription,
+  getActiveSubscriptions
 };

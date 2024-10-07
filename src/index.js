@@ -160,6 +160,58 @@ bot.onText(/\/webapp/, (msg) => {
   });
 });
 
+bot.onText(/\/subscribe/, async (msg) => {
+  const chatId = msg.chat.id;
+  const user = await userService.getUserByTelegramId(msg.from.id.toString());
+  
+  if (user && user.subscriptions.length > 0) {
+    bot.sendMessage(chatId, 'У вас вже є активні підписки. Використовуйте /mystatus для перевірки деталей.');
+  } else {
+    const keyboard = {
+      inline_keyboard: Object.entries(subscriptions).map(([key, value]) => (
+        [{ text: `${value.name} - $${value.price}`, callback_data: `subscribe_${key}` }]
+      ))
+    };
+    bot.sendMessage(chatId, 'Виберіть тип підписки:', { reply_markup: JSON.stringify(keyboard) });
+  }
+});
+
+bot.onText(/\/mystatus/, async (msg) => {
+  const chatId = msg.chat.id;
+  const user = await userService.getUserByTelegramId(msg.from.id.toString());
+
+  if (user) {
+    const activeSubscriptions = await userService.getActiveSubscriptions(user.telegramId);
+    if (activeSubscriptions.length > 0) {
+      const subscriptionList = activeSubscriptions.map(sub => subscriptions[sub].name).join(', ');
+      const endDate = new Date(user.subscriptionEndDate).toLocaleDateString();
+      bot.sendMessage(chatId, `Ваші активні підписки: ${subscriptionList}\nДата закінчення: ${endDate}`);
+    } else {
+      bot.sendMessage(chatId, 'У вас немає активних підписок. Використовуйте /subscribe для оформлення підписки.');
+    }
+  } else {
+    bot.sendMessage(chatId, 'Користувача не знайдено. Використовуйте /start для реєстрації.');
+  }
+});
+
+bot.on('callback_query', async (callbackQuery) => {
+  const action = callbackQuery.data;
+  const msg = callbackQuery.message;
+  const chatId = msg.chat.id;
+
+  if (action.startsWith('subscribe_')) {
+    const subscriptionType = action.split('_')[1];
+    try {
+      await userService.addSubscription(chatId.toString(), subscriptionType);
+      bot.answerCallbackQuery(callbackQuery.id, { text: 'Підписку успішно оформлено!' });
+      bot.sendMessage(chatId, `Ви успішно підписалися на ${subscriptions[subscriptionType].name}`);
+    } catch (error) {
+      bot.answerCallbackQuery(callbackQuery.id, { text: 'Помилка при оформленні підписки.' });
+      console.error('Помилка оформлення підписки:', error);
+    }
+  }
+});
+
 // Обробка помилок бота
 bot.on('polling_error', (error) => {
   console.error('Помилка поллінгу бота:', error);
