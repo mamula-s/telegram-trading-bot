@@ -46,18 +46,26 @@ app.get('/api/signals', async (req, res) => {
 // Налаштування бота
 const bot = new TelegramBot(process.env.BOT_TOKEN);
 
-bot.setWebHook(`${process.env.BASE_URL}/bot${process.env.BOT_TOKEN}`);
-
+bot.setWebHook(`${process.env.BASE_URL}/webhook/${process.env.BOT_TOKEN}`);
 
 
 
 // Обробка webhook
-app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
-  console.log('Запит вебхука отримано:', req.body);
+app.post(`/webhook/${process.env.BOT_TOKEN}`, (req, res) => {
+  console.log('Отримано webhook від Telegram');
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
 
+app.get('/webhook-info', async (req, res) => {
+  try {
+    const webhookInfo = await bot.getWebHookInfo();
+    res.json(webhookInfo);
+  } catch (error) {
+    console.error('Помилка отримання інформації про webhook:', error);
+    res.status(500).json({ error: 'Не вдалося отримати інформацію про webhook' });
+  }
+});
 
 // Обробка команд бота
 bot.onText(/\/start/, async (msg) => {
