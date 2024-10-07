@@ -1,6 +1,7 @@
 const User = require('../models/User');
-const bot = require('../bot'); 
-const checkExpiringSubscriptions = async () => {
+const { Op } = require('sequelize');
+
+const checkExpiringSubscriptions = async (bot) => {
   const threeDaysFromNow = new Date();
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 

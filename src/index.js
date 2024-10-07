@@ -8,8 +8,11 @@ const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
-const subscriptionService = require('./services/subscriptionService');
+const { checkExpiringSubscriptions } = require('./services/subscriptionService');
 
+// ... інший код ...
+
+checkExpiringSubscriptions(bot);
 
 const app = express();
 const port = process.env.PORT || 3000;
