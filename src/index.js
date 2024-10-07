@@ -8,11 +8,18 @@ const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
-const { checkExpiringSubscriptions } = require('./services/subscriptionService');
+const subscriptionService = require('./services/subscriptionService');
 
-// ... інший код ...
+const bot = new TelegramBot(process.env.BOT_TOKEN);
 
-checkExpiringSubscriptions(bot);
+// Тепер ми можемо викликати функцію з передачею bot
+subscriptionService.checkExpiringSubscriptions(bot);
+
+const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
+  subscriptionService.checkExpiringSubscriptions(bot);
+});
+
+checkSubscriptionsCron.start();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -48,8 +55,7 @@ app.get('/api/signals', async (req, res) => {
     }
 });
 
-// Налаштування бота
-const bot = new TelegramBot(process.env.BOT_TOKEN);
+
 
 bot.setWebHook(`${process.env.BASE_URL}/webhook/${process.env.BOT_TOKEN}`);
 
@@ -165,11 +171,7 @@ bot.onText(/\/webapp/, (msg) => {
   });
 });
 
-const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
-  subscriptionService.checkExpiringSubscriptions();
-});
 
-checkSubscriptionsCron.start();
 
 bot.onText(/\/mystatus/, async (msg) => {
   const chatId = msg.chat.id;
