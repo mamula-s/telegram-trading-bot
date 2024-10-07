@@ -8,6 +8,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
+const subscriptionService = require('./services/subscriptionService');
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -97,12 +99,12 @@ bot.onText(/\/subscribe/, async (msg) => {
   const chatId = msg.chat.id;
   const user = await userService.getUserByTelegramId(msg.from.id.toString());
   
-  if (user && user.isSubscribed) {
-    bot.sendMessage(chatId, 'У вас вже є активна підписка. Використовуйте /status для перевірки деталей.');
-  } else {
-    // Тут можна додати логіку для вибору типу підписки та оплати
-    bot.sendMessage(chatId, 'Для оформлення підписки, будь ласка, зверніться до адміністратора.');
-  }
+  const keyboard = {
+    inline_keyboard: Object.values(subscriptions).map(sub => (
+      [{ text: `${sub.name} - $${sub.price}`, callback_data: `subscribe_${sub.id}` }]
+    ))
+  };
+  bot.sendMessage(chatId, 'Виберіть тип підписки:', { reply_markup: JSON.stringify(keyboard) });
 });
 
 bot.onText(/\/status/, async (msg) => {
@@ -160,21 +162,11 @@ bot.onText(/\/webapp/, (msg) => {
   });
 });
 
-bot.onText(/\/subscribe/, async (msg) => {
-  const chatId = msg.chat.id;
-  const user = await userService.getUserByTelegramId(msg.from.id.toString());
-  
-  if (user && user.subscriptions.length > 0) {
-    bot.sendMessage(chatId, 'У вас вже є активні підписки. Використовуйте /mystatus для перевірки деталей.');
-  } else {
-    const keyboard = {
-      inline_keyboard: Object.entries(subscriptions).map(([key, value]) => (
-        [{ text: `${value.name} - $${value.price}`, callback_data: `subscribe_${key}` }]
-      ))
-    };
-    bot.sendMessage(chatId, 'Виберіть тип підписки:', { reply_markup: JSON.stringify(keyboard) });
-  }
+const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
+  subscriptionService.checkExpiringSubscriptions();
 });
+
+checkSubscriptionsCron.start();
 
 bot.onText(/\/mystatus/, async (msg) => {
   const chatId = msg.chat.id;
@@ -193,6 +185,17 @@ bot.onText(/\/mystatus/, async (msg) => {
     bot.sendMessage(chatId, 'Користувача не знайдено. Використовуйте /start для реєстрації.');
   }
 });
+// Додамо нову команду для перевірки доступу
+bot.onText(/\/checksignal/, async (msg) => {
+  const chatId = msg.chat.id;
+  const hasAccess = await userService.checkAccess(chatId.toString(), 'FUTURES_SIGNALS');
+  if (hasAccess) {
+    bot.sendMessage(chatId, "У вас є доступ до ф'ючерсних сигналів.");
+  } else {
+    bot.sendMessage(chatId, "У вас немає доступу до ф'ючерсних сигналів. Оформіть відповідну підписку.");
+  }
+});
+
 
 bot.on('callback_query', async (callbackQuery) => {
   const action = callbackQuery.data;
@@ -200,11 +203,12 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = msg.chat.id;
 
   if (action.startsWith('subscribe_')) {
-    const subscriptionType = action.split('_')[1];
+    const subscriptionId = action.split('_')[1];
     try {
-      await userService.addSubscription(chatId.toString(), subscriptionType);
+      await userService.addSubscription(chatId.toString(), subscriptionId);
+      const subscription = subscriptions[subscriptionId];
       bot.answerCallbackQuery(callbackQuery.id, { text: 'Підписку успішно оформлено!' });
-      bot.sendMessage(chatId, `Ви успішно підписалися на ${subscriptions[subscriptionType].name}`);
+      bot.sendMessage(chatId, `Ви успішно підписалися на "${subscription.name}" на ${subscription.duration} днів`);
     } catch (error) {
       bot.answerCallbackQuery(callbackQuery.id, { text: 'Помилка при оформленні підписки.' });
       console.error('Помилка оформлення підписки:', error);

@@ -105,17 +105,20 @@ const subscribeUser = async (telegramId, subscriptionType, duration) => {
   }
 };
 
-const addSubscription = async (telegramId, subscriptionType) => {
+const addSubscription = async (telegramId, subscriptionId) => {
   const user = await User.findOne({ where: { telegramId } });
   if (!user) throw new Error('Користувача не знайдено');
 
-  const userSubscriptions = user.subscriptions;
-  if (!userSubscriptions.includes(subscriptionType)) {
-    userSubscriptions.push(subscriptionType);
+  const subscription = subscriptions[subscriptionId];
+  if (!subscription) throw new Error('Невірний тип підписки');
+
+  const userSubscriptions = user.subscriptions || [];
+  if (!userSubscriptions.includes(subscriptionId)) {
+    userSubscriptions.push(subscriptionId);
   }
 
   const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + 1);  // підписка на 1 місяць
+  endDate.setDate(endDate.getDate() + subscription.duration);
 
   await user.update({
     subscriptions: userSubscriptions,
@@ -125,11 +128,12 @@ const addSubscription = async (telegramId, subscriptionType) => {
   return user;
 };
 
-const removeSubscription = async (telegramId, subscriptionType) => {
+
+const removeSubscription = async (telegramId, subscriptionId) => {
   const user = await User.findOne({ where: { telegramId } });
   if (!user) throw new Error('Користувача не знайдено');
 
-  const userSubscriptions = user.subscriptions.filter(sub => sub !== subscriptionType);
+  const userSubscriptions = user.subscriptions.filter(sub => sub !== subscriptionId);
 
   await user.update({
     subscriptions: userSubscriptions,
@@ -151,6 +155,11 @@ const getActiveSubscriptions = async (telegramId) => {
   return user.subscriptions;
 };
 
+const checkAccess = async (telegramId, requiredSubscription) => {
+  const activeSubscriptions = await getActiveSubscriptions(telegramId);
+  return activeSubscriptions.includes(requiredSubscription) || activeSubscriptions.includes('FULL');
+};
+
 module.exports = {
   createUser,
   getUserByTelegramId,
@@ -162,5 +171,6 @@ module.exports = {
   subscribeUser,
   addSubscription,
   removeSubscription,
-  getActiveSubscriptions
+  getActiveSubscriptions,
+  checkAccess
 };
