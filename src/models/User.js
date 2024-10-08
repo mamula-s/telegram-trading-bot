@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../database/sequelize');
-const subscriptions = require('../config/subscriptions');
 
 const User = sequelize.define('User', {
   telegramId: {

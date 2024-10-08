@@ -1,25 +1,25 @@
-const User = require('../models/User');
-const { Op } = require('sequelize');
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-const checkExpiringSubscriptions = async (bot) => {
-  const threeDaysFromNow = new Date();
-  threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-
-  const users = await User.findAll({
-    where: {
-      subscriptionEndDate: {
-        [Op.lt]: threeDaysFromNow,
-        [Op.gt]: new Date()
-      }
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  protocol: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
     }
-  });
+  }
+});
 
-  for (const user of users) {
-    const daysLeft = Math.ceil((user.subscriptionEndDate - new Date()) / (1000 * 60 * 60 * 24));
-    bot.sendMessage(user.telegramId, `Ваша підписка закінчується через ${daysLeft} днів. Не забудьте продовжити її!`);
+const connectDB = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection to the database has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    throw error;
   }
 };
 
-module.exports = {
-  checkExpiringSubscriptions
-};
+module.exports = { sequelize, connectDB };
