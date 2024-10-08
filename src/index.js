@@ -165,6 +165,20 @@ bot.onText(/\/checkstatus/, async (msg) => {
   }
 });
 
+bot.onText(/\/admin_check/, async (msg) => {
+  const chatId = msg.chat.id;
+  if (msg.from.id.toString() === developerId) {
+    const config = {
+      privilegedUserIds,
+      developerId,
+      // Додайте інші важливі конфігураційні параметри
+    };
+    bot.sendMessage(chatId, `Поточні налаштування:\n${JSON.stringify(config, null, 2)}`);
+  } else {
+    bot.sendMessage(chatId, 'У вас немає доступу до цієї команди.');
+  }
+});
+
 bot.onText(/\/signals/, async (msg) => {
   try {
     const chatId = msg.chat.id;

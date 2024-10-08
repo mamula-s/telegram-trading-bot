@@ -100,7 +100,10 @@ const updateUserSubscription = async (telegramId) => {
     console.log(`Користувач ${telegramId} не є привілейованим, підписку не оновлено`);
   }
 
-  return user;
+  const updatedUser = await User.findOne({ where: { telegramId } });
+  console.log('Оновлений користувач:', updatedUser.toJSON());
+
+  return updatedUser;
 };
 
 const checkAndUpdateSubscription = async (user) => {
