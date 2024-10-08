@@ -100,10 +100,10 @@ bot.onText(/\/start/, async (msg) => {
     console.log(`Оновлено підписку користувача:`, updatedUser);
 
     let welcomeMessage = `Вітаємо, ${updatedUser.firstName}!`;
-    if (updatedUser.isSubscribed && updatedUser.subscriptionType === 'vip') {
-      welcomeMessage += ' У вас активована VIP підписка.';
+    if (updatedUser.isSubscribed && updatedUser.subscriptionType === 'FULL') {
+      welcomeMessage += ' У вас активована FULL підписка.';
     } else {
-      welcomeMessage += ' Використовуйте /subscribe для оформлення підписки.';
+      welcomeMessage += ' Для отримання доступу до функцій бота, будь ласка, оформіть підписку. Використовуйте /subscribe для перегляду доступних опцій.';
     }
 
     bot.sendMessage(chatId, welcomeMessage);
@@ -210,24 +210,18 @@ bot.onText(/\/webapp/, (msg) => {
 });
 
 bot.onText(/\/mystatus/, async (msg) => {
+  const chatId = msg.chat.id;
   try {
-    const chatId = msg.chat.id;
     const user = await userService.getUserByTelegramId(msg.from.id.toString());
-
-    if (user) {
-      const activeSubscriptions = await userService.getActiveSubscriptions(user.telegramId);
-      if (activeSubscriptions.length > 0) {
-        const subscriptionList = activeSubscriptions.map(sub => subscriptions[sub].name).join(', ');
-        const endDate = new Date(user.subscriptionEndDate).toLocaleDateString();
-        bot.sendMessage(chatId, `Ваші активні підписки: ${subscriptionList}\nДата закінчення: ${endDate}`);
-      } else {
-        bot.sendMessage(chatId, 'У вас немає активних підписок. Використовуйте /subscribe для оформлення підписки.');
-      }
+    if (user && user.isSubscribed) {
+      const endDate = new Date(user.subscriptionEndDate).toLocaleDateString();
+      bot.sendMessage(chatId, `Ваша ${user.subscriptionType} підписка активна до ${endDate}.`);
     } else {
-      bot.sendMessage(chatId, 'Користувача не знайдено. Використовуйте /start для реєстрації.');
+      bot.sendMessage(chatId, 'У вас немає активної підписки. Використовуйте /subscribe для перегляду доступних опцій.');
     }
   } catch (error) {
-    console.error('Помилка обробки команди /mystatus:', error);
+    console.error('Помилка перевірки статусу:', error);
+    bot.sendMessage(chatId, 'Виникла помилка при перевірці статусу підписки.');
   }
 });
 
@@ -253,20 +247,19 @@ bot.on('callback_query', async (callbackQuery) => {
 
     if (action.startsWith('subscribe_')) {
       const subscriptionId = action.split('_')[1];
-      const user = await userService.addSubscription(chatId.toString(), subscriptionId);
-      const subscription = subscriptions[subscriptionId];
+      const user = await userService.getUserByTelegramId(chatId.toString());
       
-      if (user.subscriptionType === 'vip' && user.subscriptionEndDate > new Date()) {
-        bot.answerCallbackQuery(callbackQuery.id, { text: 'У вас вже є активна VIP підписка!' });
-        bot.sendMessage(chatId, `Ви вже маєте активну VIP підписку до ${user.subscriptionEndDate.toLocaleDateString()}`);
+      if (user.subscriptionType === 'FULL') {
+        bot.answerCallbackQuery(callbackQuery.id, { text: 'У вас вже є активна FULL підписка!' });
+        bot.sendMessage(chatId, `Ви маєте FULL підписку до ${user.subscriptionEndDate.toLocaleDateString()}`);
       } else {
-        bot.answerCallbackQuery(callbackQuery.id, { text: 'Підписку успішно оформлено!' });
-        bot.sendMessage(chatId, `Ви успішно підписалися на "${subscription.name}" на ${subscription.duration} днів`);
+        bot.answerCallbackQuery(callbackQuery.id, { text: 'Для оформлення підписки необхідна оплата.' });
+        bot.sendMessage(chatId, 'Для оформлення підписки, будь ласка, зв'яжіться з адміністратором або дочекайтеся реалізації системи оплати.');
       }
     }
   } catch (error) {
     console.error('Помилка обробки callback query:', error);
-    bot.answerCallbackQuery(callbackQuery.id, { text: 'Помилка при оформленні підписки.' });
+    bot.answerCallbackQuery(callbackQuery.id, { text: 'Виникла помилка. Спробуйте пізніше.' });
   }
 });
 

@@ -71,6 +71,7 @@ const getSubscribedUsers = async (subscriptionType) => {
   }
 };
 
+
 const updateUserSubscription = async (telegramId) => {
   console.log(`Оновлення підписки для користувача ${telegramId}`);
   console.log(`Привілейовані ID:`, privilegedUserIds);
@@ -91,10 +92,10 @@ const updateUserSubscription = async (telegramId) => {
 
     await user.update({
       isSubscribed: true,
-      subscriptionType: 'vip',
+      subscriptionType: 'FULL',
       subscriptionEndDate: oneYearFromNow
     });
-    console.log(`Оновлено підписку для користувача ${telegramId} до VIP`);
+    console.log(`Оновлено підписку для користувача ${telegramId} до FULL`);
   } else {
     console.log(`Користувач ${telegramId} не є привілейованим, підписку не оновлено`);
   }
@@ -141,32 +142,18 @@ const addSubscription = async (telegramId, subscriptionId) => {
   const user = await User.findOne({ where: { telegramId } });
   if (!user) throw new Error('Користувача не знайдено');
 
-  const subscription = subscriptions[subscriptionId];
-  if (!subscription) throw new Error('Невірний тип підписки');
+  const isPrivileged = privilegedUserIds.includes(telegramId) || telegramId === developerId;
 
-  // Якщо у користувача вже є активна VIP підписка, не змінюємо її
-  if (user.subscriptionType === 'vip' && user.subscriptionEndDate > new Date()) {
-    console.log(`Користувач ${telegramId} вже має активну VIP підписку`);
+  if (isPrivileged) {
+    console.log(`Користувач ${telegramId} є привілейованим і вже має FULL підписку`);
     return user;
   }
 
-  const userSubscriptions = user.subscriptions || [];
-  if (!userSubscriptions.includes(subscriptionId)) {
-    userSubscriptions.push(subscriptionId);
-  }
+  // Тут буде логіка перевірки оплати підписки
+  // Наразі просто виводимо повідомлення
+  console.log(`Користувач ${telegramId} намагається додати підписку ${subscriptionId}. Необхідна оплата.`);
 
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + subscription.duration);
-
-  await user.update({
-    subscriptions: userSubscriptions,
-    isSubscribed: true,
-    subscriptionType: subscriptionId,
-    subscriptionEndDate: endDate
-  });
-  console.log('Доступні підписки:', Object.keys(subscriptions));
-  console.log('Запитувана підписка:', subscriptionId);
-  console.log(`Додано підписку ${subscriptionId} для користувача ${telegramId}`);
+  // Повертаємо користувача без змін, оскільки оплата ще не реалізована
   return user;
 };
 
