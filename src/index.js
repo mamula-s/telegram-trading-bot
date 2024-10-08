@@ -86,16 +86,18 @@ app.get('/webhook-info', async (req, res) => {
 bot.onText(/\/start/, async (msg) => {
   try {
     const chatId = msg.chat.id;
+    console.log(`Отримано команду /start від користувача ${msg.from.id}`);
+    
     const user = await userService.createUser({
       telegramId: msg.from.id.toString(),
       username: msg.from.username,
       firstName: msg.from.first_name,
       lastName: msg.from.last_name,
     });
+    console.log(`Створено або оновлено користувача:`, user);
 
-    await userService.updateUserSubscription(user.telegramId);
-
-    const updatedUser = await userService.getUserByTelegramId(user.telegramId);
+    const updatedUser = await userService.updateUserSubscription(user.telegramId);
+    console.log(`Оновлено підписку користувача:`, updatedUser);
 
     let welcomeMessage = `Вітаємо, ${updatedUser.firstName}!`;
     if (updatedUser.isSubscribed && updatedUser.subscriptionType === 'vip') {
@@ -107,6 +109,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, welcomeMessage);
   } catch (error) {
     console.error('Помилка обробки команди /start:', error);
+    bot.sendMessage(chatId, 'Виникла помилка при обробці команди. Спробуйте ще раз пізніше.');
   }
 });
 
