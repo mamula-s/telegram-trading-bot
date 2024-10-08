@@ -1,7 +1,8 @@
 const User = require('../models/User');
-const { Op } = require('sequelize');
+const TelegramBot = require('node-telegram-bot-api');
 
-const checkExpiringSubscriptions = async (bot) => {
+const checkExpiringSubscriptions = async () => {
+  const bot = new TelegramBot(process.env.BOT_TOKEN);
   const threeDaysFromNow = new Date();
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
