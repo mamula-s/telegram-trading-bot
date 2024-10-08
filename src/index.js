@@ -253,10 +253,16 @@ bot.on('callback_query', async (callbackQuery) => {
 
     if (action.startsWith('subscribe_')) {
       const subscriptionId = action.split('_')[1];
-      await userService.addSubscription(chatId.toString(), subscriptionId);
+      const user = await userService.addSubscription(chatId.toString(), subscriptionId);
       const subscription = subscriptions[subscriptionId];
-      bot.answerCallbackQuery(callbackQuery.id, { text: 'Підписку успішно оформлено!' });
-      bot.sendMessage(chatId, `Ви успішно підписалися на "${subscription.name}" на ${subscription.duration} днів`);
+      
+      if (user.subscriptionType === 'vip' && user.subscriptionEndDate > new Date()) {
+        bot.answerCallbackQuery(callbackQuery.id, { text: 'У вас вже є активна VIP підписка!' });
+        bot.sendMessage(chatId, `Ви вже маєте активну VIP підписку до ${user.subscriptionEndDate.toLocaleDateString()}`);
+      } else {
+        bot.answerCallbackQuery(callbackQuery.id, { text: 'Підписку успішно оформлено!' });
+        bot.sendMessage(chatId, `Ви успішно підписалися на "${subscription.name}" на ${subscription.duration} днів`);
+      }
     }
   } catch (error) {
     console.error('Помилка обробки callback query:', error);

@@ -144,6 +144,12 @@ const addSubscription = async (telegramId, subscriptionId) => {
   const subscription = subscriptions[subscriptionId];
   if (!subscription) throw new Error('Невірний тип підписки');
 
+  // Якщо у користувача вже є активна VIP підписка, не змінюємо її
+  if (user.subscriptionType === 'vip' && user.subscriptionEndDate > new Date()) {
+    console.log(`Користувач ${telegramId} вже має активну VIP підписку`);
+    return user;
+  }
+
   const userSubscriptions = user.subscriptions || [];
   if (!userSubscriptions.includes(subscriptionId)) {
     userSubscriptions.push(subscriptionId);
@@ -158,7 +164,8 @@ const addSubscription = async (telegramId, subscriptionId) => {
     subscriptionType: subscriptionId,
     subscriptionEndDate: endDate
   });
-
+  console.log('Доступні підписки:', Object.keys(subscriptions));
+  console.log('Запитувана підписка:', subscriptionId);
   console.log(`Додано підписку ${subscriptionId} для користувача ${telegramId}`);
   return user;
 };
