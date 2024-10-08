@@ -254,7 +254,7 @@ bot.on('callback_query', async (callbackQuery) => {
         bot.sendMessage(chatId, `Ви маєте FULL підписку до ${user.subscriptionEndDate.toLocaleDateString()}`);
       } else {
         bot.answerCallbackQuery(callbackQuery.id, { text: 'Для оформлення підписки необхідна оплата.' });
-        bot.sendMessage(chatId, 'Для оформлення підписки, будь ласка, зв'яжіться з адміністратором або дочекайтеся реалізації системи оплати.');
+        bot.sendMessage(chatId, "Для оформлення підписки, будь ласка, зв'яжіться з адміністратором або дочекайтеся реалізації системи оплати.");
       }
     }
   } catch (error) {
