@@ -3,6 +3,7 @@ const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 
+const { CronJob } = require('cron');
 const { sequelize, connectDB } = require('./database/sequelize');
 const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
