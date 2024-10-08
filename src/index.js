@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const { CronJob } = require('cron');
 const { sequelize, connectDB } = require('./database/sequelize');
+const subscriptions = require('./config/subscriptions');
 const adminRoutes = require('./routes/adminRoutes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
@@ -60,6 +61,11 @@ app.get('/api/signals', async (req, res) => {
 
 bot.setWebHook(`${process.env.BASE_URL}/webhook/${process.env.BOT_TOKEN}`);
 
+bot.setWebHook(`${process.env.BASE_URL}/webhook/${process.env.BOT_TOKEN}`).then(() => {
+  console.log('Webhook встановлено успішно');
+}).catch((error) => {
+  console.error('Помилка встановлення webhook:', error);
+});
 
 
 // Обробка webhook
@@ -106,15 +112,20 @@ bot.onText(/\/help/, (msg) => {
 });
 
 bot.onText(/\/subscribe/, async (msg) => {
-  const chatId = msg.chat.id;
-  const user = await userService.getUserByTelegramId(msg.from.id.toString());
-  
-  const keyboard = {
-    inline_keyboard: Object.values(subscriptions).map(sub => (
-      [{ text: `${sub.name} - $${sub.price}`, callback_data: `subscribe_${sub.id}` }]
-    ))
-  };
-  bot.sendMessage(chatId, 'Виберіть тип підписки:', { reply_markup: JSON.stringify(keyboard) });
+  try {
+    const chatId = msg.chat.id;
+    const user = await userService.getUserByTelegramId(msg.from.id.toString());
+    
+    const keyboard = {
+      inline_keyboard: Object.values(subscriptions).map(sub => (
+        [{ text: `${sub.name} - $${sub.price}`, callback_data: `subscribe_${sub.id}` }]
+      ))
+    };
+    await bot.sendMessage(chatId, 'Виберіть тип підписки:', { reply_markup: JSON.stringify(keyboard) });
+  } catch (error) {
+    console.error('Помилка при обробці команди /subscribe:', error);
+    // Можна додати відправку повідомлення про помилку користувачу
+  }
 });
 
 bot.onText(/\/status/, async (msg) => {
