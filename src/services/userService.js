@@ -56,7 +56,7 @@ const getSubscribedUsers = async (subscriptionType) => {
 };
 
 const updateUserSubscription = async (telegramId) => {
-  const user = await User.findOne({ telegramId });
+  const user = await User.findOne({ where: { telegramId } });
   if (!user) return null;
 
   const isPrivileged = privilegedUserIds.includes(telegramId) || telegramId === developerId;
@@ -65,11 +65,11 @@ const updateUserSubscription = async (telegramId) => {
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
-    user.isSubscribed = true;
-    user.subscriptionType = 'vip'; // припустимо, що 'vip' - це максимальний тип підписки
-    user.subscriptionEndDate = oneYearFromNow;
-    
-    await user.save();
+    await user.update({
+      isSubscribed: true,
+      subscriptionType: 'vip',
+      subscriptionEndDate: oneYearFromNow
+    });
   }
 
   return user;
@@ -159,6 +159,8 @@ const checkAccess = async (telegramId, requiredSubscription) => {
   const activeSubscriptions = await getActiveSubscriptions(telegramId);
   return activeSubscriptions.includes(requiredSubscription) || activeSubscriptions.includes('FULL');
 };
+
+
 
 module.exports = {
   createUser,

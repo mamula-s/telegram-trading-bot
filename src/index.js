@@ -93,10 +93,16 @@ bot.onText(/\/start/, async (msg) => {
       lastName: msg.from.last_name,
     });
 
-    let welcomeMessage = `Вітаємо, ${user.firstName}!`;
-    welcomeMessage += user.isSubscribed && user.subscriptionType === 'vip'
-      ? ' У вас активована VIP підписка.'
-      : ' Використовуйте /subscribe для оформлення підписки.';
+    await userService.updateUserSubscription(user.telegramId);
+
+    const updatedUser = await userService.getUserByTelegramId(user.telegramId);
+
+    let welcomeMessage = `Вітаємо, ${updatedUser.firstName}!`;
+    if (updatedUser.isSubscribed && updatedUser.subscriptionType === 'vip') {
+      welcomeMessage += ' У вас активована VIP підписка.';
+    } else {
+      welcomeMessage += ' Використовуйте /subscribe для оформлення підписки.';
+    }
 
     bot.sendMessage(chatId, welcomeMessage);
   } catch (error) {
