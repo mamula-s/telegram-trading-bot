@@ -145,6 +145,23 @@ bot.onText(/\/status/, async (msg) => {
   }
 });
 
+bot.onText(/\/checkstatus/, async (msg) => {
+  try {
+    const chatId = msg.chat.id;
+    const user = await userService.getUserByTelegramId(msg.from.id.toString());
+    
+    if (user && user.isSubscribed) {
+      const subscriptionEnd = new Date(user.subscriptionEndDate).toLocaleDateString();
+      bot.sendMessage(chatId, `Ваша ${user.subscriptionType.toUpperCase()} підписка активна до ${subscriptionEnd}.`);
+    } else {
+      bot.sendMessage(chatId, 'У вас немає активної підписки.');
+    }
+  } catch (error) {
+    console.error('Помилка перевірки статусу:', error);
+    bot.sendMessage(chatId, 'Виникла помилка при перевірці статусу підписки.');
+  }
+});
+
 bot.onText(/\/signals/, async (msg) => {
   try {
     const chatId = msg.chat.id;
