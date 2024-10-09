@@ -15,16 +15,19 @@ const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
 const port = process.env.PORT || 3000;
 
-const routes = require('./admin/routes');
-
+const adminRoutes = require('./admin/routes');
 
 // Middleware
-app.use('/api', routes);
+app.use('/admin', adminRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+app.get('/', (req, res) => {
+  res.send('Welcome to the Telegram Trading Bot');
+});
 
 
 
@@ -313,6 +316,10 @@ bot.on('polling_error', (error) => {
 
 bot.on('webhook_error', (error) => {
   console.error('Помилка вебхука бота:', error);
+});
+
+app.use((req, res, next) => {
+  res.status(404).send("Sorry, that route doesn't exist.");
 });
 
 // Обробка помилок Express
