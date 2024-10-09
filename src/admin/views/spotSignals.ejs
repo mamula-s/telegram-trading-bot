@@ -1,0 +1,34 @@
+<%- contentFor('body') %>
+<h1>Spot Signals</h1>
+<a href="/admin/spot-signals/new" class="btn btn-primary mb-3">Create New Signal</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Pair</th>
+            <th>Direction</th>
+            <th>Entry Price</th>
+            <th>Take Profit</th>
+            <th>Stop Loss</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% spotSignals.forEach(signal => { %>
+            <tr>
+                <td><%= signal.id %></td>
+                <td><%= signal.pair %></td>
+                <td><%= signal.direction %></td>
+                <td><%= signal.entryPrice %></td>
+                <td><%= signal.takeProfit %></td>
+                <td><%= signal.stopLoss %></td>
+                <td><%= signal.createdAt %></td>
+                <td>
+                    <a href="/admin/spot-signals/<%= signal.id %>" class="btn btn-sm btn-info">View</a>
+                    <a href="/admin/spot-signals/<%= signal.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>

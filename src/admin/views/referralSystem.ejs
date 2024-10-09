@@ -1,0 +1,46 @@
+<%- contentFor('body') %>
+<h1>Referral System</h1>
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h2>Top Referrers</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Referrals Count</th>
+                    <th>Total Earnings</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% topReferrers.forEach(referrer => { %>
+                    <tr>
+                        <td><%= referrer.user.username %></td>
+                        <td><%= referrer.referralsCount %></td>
+                        <td>$<%= referrer.totalEarnings %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h2>Recent Referrals</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Referrer</th>
+                    <th>Referred User</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% recentReferrals.forEach(referral => { %>
+                    <tr>
+                        <td><%= referral.referrer.username %></td>
+                        <td><%= referral.referredUser.username %></td>
+                        <td><%= referral.createdAt %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>

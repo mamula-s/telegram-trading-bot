@@ -1,0 +1,28 @@
+<%- contentFor('body') %>
+<h1>Educational Materials</h1>
+<a href="/admin/educational-materials/new" class="btn btn-primary mb-3">Add New Material</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% educationalMaterials.forEach(material => { %>
+            <tr>
+                <td><%= material.id %></td>
+                <td><%= material.title %></td>
+                <td><%= material.type %></td>
+                <td><%= material.createdAt %></td>
+                <td>
+                    <a href="/admin/educational-materials/<%= material.id %>" class="btn btn-sm btn-info">View</a>
+                    <a href="/admin/educational-materials/<%= material.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>

@@ -1,22 +1,36 @@
-<%- include('layout', { title: 'Дашборд' }) %>
-
-<h1>Дашборд</h1>
-
-<div class="stats">
-    <div class="stat-card">
-        <h3>Кількість підписників</h3>
-        <p><%= subscribersCount %></p>
+<%- contentFor('body') %>
+<h1>Dashboard</h1>
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <p class="card-text"><%= totalUsers %></p>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Фючерсні сигнали</h3>
-        <p><%= futuresSignalsCount %></p>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Active Subscriptions</h5>
+                <p class="card-text"><%= activeSubscriptions %></p>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Спотові сигнали</h3>
-        <p><%= spotSignalsCount %></p>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Signals</h5>
+                <p class="card-text"><%= totalSignals %></p>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <h3>Прибутковість</h3>
-        <p><%= profitability %>%</p>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Total Revenue</h5>
+                <p class="card-text">$<%= totalRevenue %></p>
+            </div>
+        </div>
     </div>
 </div>

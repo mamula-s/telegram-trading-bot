@@ -1,0 +1,29 @@
+<%- contentFor('body') %>
+<h1>Reviews</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% reviews.forEach(review => { %>
+            <tr>
+                <td><%= review.id %></td>
+                <td><%= review.user.username %></td>
+                <td><%= review.rating %></td>
+                <td><%= review.comment %></td>
+                <td><%= review.createdAt %></td>
+                <td>
+                    <a href="/admin/reviews/<%= review.id %>" class="btn btn-sm btn-info">View</a>
+                    <a href="/admin/reviews/<%= review.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>

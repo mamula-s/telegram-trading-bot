@@ -1,0 +1,29 @@
+<%- contentFor('body') %>
+<h1>Users</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Telegram ID</th>
+            <th>Username</th>
+            <th>Subscription Type</th>
+            <th>Subscription End Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% users.forEach(user => { %>
+            <tr>
+                <td><%= user.id %></td>
+                <td><%= user.telegramId %></td>
+                <td><%= user.username %></td>
+                <td><%= user.subscriptionType %></td>
+                <td><%= user.subscriptionEndDate %></td>
+                <td>
+                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm btn-info">View</a>
+                    <a href="/admin/users/<%= user.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
