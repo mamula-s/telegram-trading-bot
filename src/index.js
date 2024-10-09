@@ -26,13 +26,23 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 router.use(authMiddleware);
 
-router.use('/', require('./admin/routes/dashboard'));
-router.use('/users', require('./admin/routes/users'));
-router.use('/futures-signals', require('./admin/routes/futuresSignals'));
-router.use('/spot-signals', require('./admin/routes/spotSignals'));
-router.use('/educational-materials', require('./admin/routes/educationalMaterials'));
-router.use('/reviews', require('./admin/routes/reviews'));
-router.use('/referral-system', require('./admin/routes/referralSystem'));
+// Імпорт маршрутів
+const dashboardRoutes = require('./admin/routes/dashboard');
+const usersRoutes = require('./admin/routes/users');
+const futuresSignalsRoutes = require('./admin/routes/futuresSignals');
+const spotSignalsRoutes = require('./admin/routes/spotSignals');
+const educationalMaterialsRoutes = require('./admin/routes/educationalMaterials');
+const reviewsRoutes = require('./admin/routes/reviews');
+const referralSystemRoutes = require('./admin/routes/referralSystem');
+
+// Використання маршрутів
+app.use('/', dashboardRoutes);
+app.use('/users', usersRoutes);
+app.use('/futures-signals', futuresSignalsRoutes);
+app.use('/spot-signals', spotSignalsRoutes);
+app.use('/educational-materials', educationalMaterialsRoutes);
+app.use('/reviews', reviewsRoutes);
+app.use('/referral-system', referralSystemRoutes);
 
 // Cron job для перевірки підписок
 const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
@@ -367,6 +377,6 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-module.exports = { app, bot, broadcastSignal, router };
+module.exports = { app, bot, broadcastSignal };
 
 
