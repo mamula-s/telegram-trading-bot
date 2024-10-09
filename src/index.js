@@ -15,7 +15,12 @@ const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
 const port = process.env.PORT || 3000;
 
+const routes = require('./routes');
+
+
 // Middleware
+app.use('/api', routes);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
