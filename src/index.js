@@ -15,7 +15,7 @@ const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
 const port = process.env.PORT || 3000;
 
-const routes = require('./routes');
+const routes = require('./admin/routes');
 
 
 // Middleware
@@ -26,25 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Імпорт маршрутів
-const adminRoutes = require('./admin/routes');
-const dashboardRoutes = require('./admin/routes/dashboard');
-const usersRoutes = require('./admin/routes/users');
-const futuresSignalsRoutes = require('./admin/routes/futuresSignals');
-const spotSignalsRoutes = require('./admin/routes/spotSignals');
-const educationalMaterialsRoutes = require('./admin/routes/educationalMaterials');
-const reviewsRoutes = require('./admin/routes/reviews');
-const referralSystemRoutes = require('./admin/routes/referralSystem');
 
-// Використання маршрутів
-app.use('/admin', adminRoutes);
-app.use('/', dashboardRoutes);
-app.use('/users', usersRoutes);
-app.use('/futures-signals', futuresSignalsRoutes);
-app.use('/spot-signals', spotSignalsRoutes);
-app.use('/educational-materials', educationalMaterialsRoutes);
-app.use('/reviews', reviewsRoutes);
-app.use('/referral-system', referralSystemRoutes);
 
 // Налаштування шаблонізатора
 app.set('view engine', 'ejs');
