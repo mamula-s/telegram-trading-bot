@@ -4,11 +4,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const { CronJob } = require('cron');
 require('dotenv').config();
 
-const router = express.Router();
-const authMiddleware = require('./admin/middleware/auth');
 const { sequelize, connectDB } = require('./database/sequelize');
 const subscriptions = require('./config/subscriptions');
-const adminRoutes = require('./admin/routes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
@@ -24,9 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-router.use(authMiddleware);
-
 // Імпорт маршрутів
+const adminRoutes = require('./admin/routes');
 const dashboardRoutes = require('./admin/routes/dashboard');
 const usersRoutes = require('./admin/routes/users');
 const futuresSignalsRoutes = require('./admin/routes/futuresSignals');
@@ -36,6 +32,7 @@ const reviewsRoutes = require('./admin/routes/reviews');
 const referralSystemRoutes = require('./admin/routes/referralSystem');
 
 // Використання маршрутів
+app.use('/admin', adminRoutes);
 app.use('/', dashboardRoutes);
 app.use('/users', usersRoutes);
 app.use('/futures-signals', futuresSignalsRoutes);
@@ -43,6 +40,10 @@ app.use('/spot-signals', spotSignalsRoutes);
 app.use('/educational-materials', educationalMaterialsRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/referral-system', referralSystemRoutes);
+
+// Налаштування шаблонізатора
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'admin', 'views'));
 
 // Cron job для перевірки підписок
 const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
@@ -64,7 +65,7 @@ const setWebhookWithRetry = async (retryCount = 0) => {
   }
 };
 
-// Маршрути
+// Маршрути API
 app.get('/webapp', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
 });
@@ -104,6 +105,25 @@ app.get('/webhook-info', async (req, res) => {
   }
 });
 
+app.post('/api/settings', async (req, res) => {
+  const { frequency, notificationsEnabled } = req.body;
+  const userId = req.headers['x-telegram-user-id'];
+
+  try {
+    // TODO: Зберегти налаштування в базі даних
+    // await userService.updateSettings(userId, { frequency, notificationsEnabled });
+    res.json({ success: true, message: 'Налаштування збережено' });
+  } catch (error) {
+    console.error('Помилка збереження налаштувань:', error);
+    res.status(500).json({ success: false, message: 'Помилка збереження налаштувань' });
+  }
+});
+
+// Маршрут для перевірки стану сервера
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
 // Обробка команд бота
 bot.onText(/\/start/, async (msg) => {
   try {
@@ -134,6 +154,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, 'Виникла помилка при обробці команди. Спробуйте ще раз пізніше.');
   }
 });
+
 
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
@@ -298,7 +319,6 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.answerCallbackQuery(callbackQuery.id, { text: 'Виникла помилка. Спробуйте пізніше.' });
   }
 });
-
 // Обробка помилок бота
 bot.on('polling_error', (error) => {
   console.error('Помилка поллінгу бота:', error);
@@ -308,18 +328,7 @@ bot.on('webhook_error', (error) => {
   console.error('Помилка вебхука бота:', error);
 });
 
-// Адмін-панель роути
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'admin', 'views'));
-
-app.use('/admin', adminRoutes);
-
-// Маршрут для перевірки стану сервера
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
-
-// Обробка помилок
+// Обробка помилок Express
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Щось пішло не так!');
@@ -336,20 +345,6 @@ const broadcastSignal = async (signal) => {
     console.error('Помилка при розсилці сигналу:', error);
   }
 };
-
-app.post('/api/settings', async (req, res) => {
-  const { frequency, notificationsEnabled } = req.body;
-  const userId = req.headers['x-telegram-user-id'];
-
-  try {
-    // TODO: Зберегти налаштування в базі даних
-    // await userService.updateSettings(userId, { frequency, notificationsEnabled });
-    res.json({ success: true, message: 'Налаштування збережено' });
-  } catch (error) {
-    console.error('Помилка збереження налаштувань:', error);
-    res.status(500).json({ success: false, message: 'Помилка збереження налаштувань' });
-  }
-});
 
 // Підключення до бази даних і запуск сервера
 connectDB().then(async () => {
@@ -378,5 +373,3 @@ process.on('SIGTERM', async () => {
 });
 
 module.exports = { app, bot, broadcastSignal };
-
-
