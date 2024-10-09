@@ -26,13 +26,13 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 router.use(authMiddleware);
 
-router.use('/', require('./dashboard'));
-router.use('/users', require('./users'));
-router.use('/futures-signals', require('./futuresSignals'));
-router.use('/spot-signals', require('./spotSignals'));
-router.use('/educational-materials', require('./educationalMaterials'));
-router.use('/reviews', require('./reviews'));
-router.use('/referral-system', require('./referralSystem'));
+router.use('/', require('./admin/routes/dashboard'));
+router.use('/users', require('./admin/routes/users'));
+router.use('/futures-signals', require('./admin/routes/futuresSignals'));
+router.use('/spot-signals', require('./admin/routes/spotSignals'));
+router.use('/educational-materials', require('./admin/routes/educationalMaterials'));
+router.use('/reviews', require('./admin/routes/reviews'));
+router.use('/referral-system', require('./admin/routes/referralSystem'));
 
 // Cron job для перевірки підписок
 const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
