@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмін-панель - <%= title %></title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/admin">Дашборд</a></li>
+            <li><a href="/admin/users">Користувачі</a></li>
+            <li><a href="/admin/futures-signals">Фючерсні сигнали</a></li>
+            <li><a href="/admin/spot-signals">Спотові сигнали</a></li>
+            <li><a href="/admin/educational-materials">Навчальні матеріали</a></li>
+            <li><a href="/admin/reviews">Огляди</a></li>
+            <li><a href="/admin/referral-system">Реферальна система</a></li>
+        </ul>
+    </nav>
+    <main>
+        <%- body %>
+    </main>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

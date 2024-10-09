@@ -4,9 +4,12 @@ const TelegramBot = require('node-telegram-bot-api');
 const { CronJob } = require('cron');
 require('dotenv').config();
 
+const router = express.Router();
+const authMiddleware = require('../middleware/auth');
+
 const { sequelize, connectDB } = require('./database/sequelize');
 const subscriptions = require('./config/subscriptions');
-const adminRoutes = require('./routes/adminRoutes');
+const adminRoutes = require('./admin/routes');
 const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
@@ -21,6 +24,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+router.use(authMiddleware);
+
+router.use('/', require('./dashboard'));
+router.use('/users', require('./users'));
+router.use('/futures-signals', require('./futuresSignals'));
+router.use('/spot-signals', require('./spotSignals'));
+router.use('/educational-materials', require('./educationalMaterials'));
+router.use('/reviews', require('./reviews'));
+router.use('/referral-system', require('./referralSystem'));
 
 // Cron job для перевірки підписок
 const checkSubscriptionsCron = new CronJob('0 12 * * *', () => {
@@ -287,6 +300,9 @@ bot.on('webhook_error', (error) => {
 });
 
 // Адмін-панель роути
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'admin', 'views'));
+
 app.use('/admin', adminRoutes);
 
 // Маршрут для перевірки стану сервера
@@ -353,3 +369,5 @@ process.on('SIGTERM', async () => {
 });
 
 module.exports = { app, bot, broadcastSignal };
+module.exports = router;
+

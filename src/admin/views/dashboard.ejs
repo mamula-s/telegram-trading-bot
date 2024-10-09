@@ -1,0 +1,22 @@
+<%- include('layout', { title: 'Дашборд' }) %>
+
+<h1>Дашборд</h1>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Кількість підписників</h3>
+        <p><%= subscribersCount %></p>
+    </div>
+    <div class="stat-card">
+        <h3>Фючерсні сигнали</h3>
+        <p><%= futuresSignalsCount %></p>
+    </div>
+    <div class="stat-card">
+        <h3>Спотові сигнали</h3>
+        <p><%= spotSignalsCount %></p>
+    </div>
+    <div class="stat-card">
+        <h3>Прибутковість</h3>
+        <p><%= profitability %>%</p>
+    </div>
+</div>
