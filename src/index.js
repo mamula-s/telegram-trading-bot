@@ -5,8 +5,7 @@ const { CronJob } = require('cron');
 require('dotenv').config();
 
 const router = express.Router();
-const authMiddleware = require('./middleware/auth');
-
+const authMiddleware = require('./admin/middleware/auth');
 const { sequelize, connectDB } = require('./database/sequelize');
 const subscriptions = require('./config/subscriptions');
 const adminRoutes = require('./admin/routes');
