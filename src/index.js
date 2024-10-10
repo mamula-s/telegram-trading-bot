@@ -24,10 +24,9 @@ app.set('views', path.join(__dirname, 'views'));
 const basicAuth = require('express-basic-auth');
 
 app.use('/admin', basicAuth({
-    users: { 'admin': 'secretpassword' },
-    challenge: true
+  users: { 'admin': 'password' }, // Змініть це на безпечний пароль
+  challenge: true
 }));
-
 
 // Використання маршрутів адмін-панелі
 app.use('/admin', adminRoutes);
