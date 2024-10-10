@@ -17,8 +17,21 @@ const port = process.env.PORT || 3000;
 
 const adminRoutes = require('./admin/routes');
 
-// Middleware
+// Налаштування шаблонізатора
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+const basicAuth = require('express-basic-auth');
+
+app.use('/admin', basicAuth({
+    users: { 'admin': 'secretpassword' },
+    challenge: true
+}));
+
+
+// Використання маршрутів адмін-панелі
 app.use('/admin', adminRoutes);
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
