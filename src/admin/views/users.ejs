@@ -1,14 +1,13 @@
-<%- contentFor('body') %>
-<h1>Users</h1>
+<h1>Користувачі</h1>
 <table class="table table-striped">
     <thead>
         <tr>
             <th>ID</th>
             <th>Telegram ID</th>
-            <th>Username</th>
-            <th>Subscription Type</th>
-            <th>Subscription End Date</th>
-            <th>Actions</th>
+            <th>Ім'я</th>
+            <th>Тип підписки</th>
+            <th>Дата закінчення підписки</th>
+            <th>Дії</th>
         </tr>
     </thead>
     <tbody>
@@ -16,12 +15,11 @@
             <tr>
                 <td><%= user.id %></td>
                 <td><%= user.telegramId %></td>
-                <td><%= user.username %></td>
+                <td><%= user.firstName %> <%= user.lastName %></td>
                 <td><%= user.subscriptionType %></td>
-                <td><%= user.subscriptionEndDate %></td>
+                <td><%= user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString() : 'Немає' %></td>
                 <td>
-                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm btn-info">View</a>
-                    <a href="/admin/users/<%= user.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm btn-info">Деталі</a>
                 </td>
             </tr>
         <% }) %>
