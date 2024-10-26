@@ -17,6 +17,9 @@ const port = process.env.PORT || 3000;
 
 const adminRoutes = require('./admin/routes');
 
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 // Налаштування шаблонізатора
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

@@ -1,0 +1,91 @@
+<!-- src/admin/views/partials/new-signal-modal.ejs -->
+<div id="newSignalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Створення нового сигналу</h2>
+            <form onsubmit="createSignal(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Торгова пара</label>
+                    <input type="text" name="pair" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Напрямок</label>
+                    <select name="direction" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="LONG">LONG</option>
+                        <option value="SHORT">SHORT</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Ціна входу</label>
+                    <input type="number" name="entryPrice" step="0.00000001" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Take Profit</label>
+                    <input type="number" name="takeProfit" step="0.00000001" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Stop Loss</label>
+                    <input type="number" name="stopLoss" step="0.00000001" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Таймфрейм</label>
+                    <select name="timeframe" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="1m">1m</option>
+                        <option value="5m">5m</option>
+                        <option value="15m">15m</option>
+                        <option value="30m">30m</option>
+                        <option value="1h">1h</option>
+                        <option value="4h">4h</option>
+                        <option value="1d">1d</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Рівень ризику</label>
+                    <select name="riskLevel" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="LOW">Низький</option>
+                        <option value="MEDIUM">Середній</option>
+                        <option value="HIGH">Високий</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Опис</label>
+                    <textarea name="description" rows="3"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="sendNotification" value="true"
+                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <label class="ml-2 block text-sm text-gray-900">
+                        Надіслати сповіщення користувачам
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeNewSignalModal()"
+                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+                        Скасувати
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Створити
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

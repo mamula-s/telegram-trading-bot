@@ -1,110 +1,100 @@
-let tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 
-tg.expand();
+const app = {
+    pages: {
+        home: { title: 'Головна', render: renderHome },
+        futuresSignals: { title: 'Фючерсні сигнали', render: renderFuturesSignals },
+        spotSignals: { title: 'Спотові сигнали', render: renderSpotSignals },
+        educationalMaterials: { title: 'Навчальні матеріали', render: renderEducationalMaterials },
+        airdrops: { title: 'Огляд тапалок/аірдропів', render: renderAirdrops },
+        payment: { title: 'Оплата і реферальна система', render: renderPayment },
+        chats: { title: 'Чати', render: renderChats }
+    },
 
-document.addEventListener('DOMContentLoaded', function() {
-    tg.ready();
-    loadUserInfo();
-    loadPortfolio();
-    loadSignals();
-    loadSettings();
-});
+    init() {
+        this.createNavigation();
+        this.navigateTo('home');
+        tg.ready();
+    },
 
-function loadUserInfo() {
-    let userInfo = document.getElementById('user-info');
-    if (tg.initDataUnsafe.user) {
-        userInfo.innerHTML = `
-            <p>Користувач: ${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name || ''}</p>
-            <p>Telegram ID: ${tg.initDataUnsafe.user.id}</p>
-        `;
-    } else {
-        userInfo.innerHTML = '<p>Інформація про користувача недоступна</p>';
+    createNavigation() {
+        const nav = document.getElementById('main-nav');
+        for (const [key, { title }] of Object.entries(this.pages)) {
+            const button = document.createElement('button');
+            button.textContent = title;
+            button.addEventListener('click', () => this.navigateTo(key));
+            nav.appendChild(button);
+        }
+    },
+
+    navigateTo(page) {
+        const content = document.getElementById('content');
+        content.innerHTML = '';
+        this.pages[page].render(content);
     }
-}
+};
 
-function loadPortfolio() {
-    let portfolioContent = document.getElementById('portfolio-content');
-    portfolioContent.innerHTML = '<p>Завантаження портфоліо...</p>';
-    
-    fetch('/api/portfolio')
-        .then(response => response.json())
-        .then(data => {
-            let html = '<ul>';
-            data.forEach(item => {
-                html += `<li>${item.asset}: ${item.amount} (${item.value} USD)</li>`;
-            });
-            html += '</ul>';
-            portfolioContent.innerHTML = html;
-        })
-        .catch(error => {
-            portfolioContent.innerHTML = '<p>Помилка завантаження портфоліо</p>';
-            console.error('Помилка:', error);
-        });
-}
-
-function loadSignals() {
-    let signalsContent = document.getElementById('signals-content');
-    signalsContent.innerHTML = '<p>Завантаження сигналів...</p>';
-    
-    fetch('/api/signals')
-        .then(response => response.json())
-        .then(data => {
-            let html = '<ul>';
-            data.forEach(signal => {
-                html += `<li>${signal.type} | ${signal.pair} | ${signal.direction} | Вхід: ${signal.entryPrice}</li>`;
-            });
-            html += '</ul>';
-            signalsContent.innerHTML = html;
-        })
-        .catch(error => {
-            signalsContent.innerHTML = '<p>Помилка завантаження сигналів</p>';
-            console.error('Помилка:', error);
-        });
-}
-
-function loadSettings() {
-    let settingsContent = document.getElementById('settings-content');
-    settingsContent.innerHTML = `
-        <p>Частота сигналів: <select id="signal-frequency">
-            <option value="all">Всі</option>
-            <option value="daily">Щоденно</option>
-            <option value="weekly">Щотижня</option>
-        </select></p>
-        <p>Сповіщення: <input type="checkbox" id="notifications-enabled" checked></p>
-        <button onclick="saveSettings()">Зберегти налаштування</button>
+function renderHome(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Ласкаво просимо до Trading Bot</h2>
+            <p>Оберіть розділ у меню вище для перегляду інформації.</p>
+        </div>
     `;
 }
 
-function saveSettings() {
-    let frequency = document.getElementById('signal-frequency').value;
-    let notificationsEnabled = document.getElementById('notifications-enabled').checked;
-    
-    fetch('/api/settings', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ frequency, notificationsEnabled }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        tg.showPopup({
-            title: 'Успіх',
-            message: 'Налаштування збережено',
-            buttons: [{ type: 'close' }]
-        });
-    })
-    .catch(error => {
-        console.error('Помилка збереження налаштувань:', error);
-        tg.showPopup({
-            title: 'Помилка',
-            message: 'Не вдалося зберегти налаштування',
-            buttons: [{ type: 'close' }]
-        });
-    });
+function renderFuturesSignals(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Фючерсні сигнали</h2>
+            <p>Тут будуть відображатися фючерсні сигнали.</p>
+        </div>
+    `;
 }
 
-// Додайте кнопку "Закрити" в верхньому правому куті
-tg.MainButton.setText('Закрити').show().onClick(function() {
-    tg.close();
-});
+function renderSpotSignals(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Спотові сигнали</h2>
+            <p>Тут будуть відображатися спотові сигнали.</p>
+        </div>
+    `;
+}
+
+function renderEducationalMaterials(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Навчальні матеріали</h2>
+            <p>Тут будуть доступні навчальні матеріали.</p>
+        </div>
+    `;
+}
+
+function renderAirdrops(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Огляд тапалок/аірдропів</h2>
+            <p>Тут будуть відображатися огляди тапалок та аірдропів.</p>
+        </div>
+    `;
+}
+
+function renderPayment(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Оплата і реферальна система</h2>
+            <p>Тут буде інформація про оплату та реферальну систему.</p>
+        </div>
+    `;
+}
+
+function renderChats(container) {
+    container.innerHTML = `
+        <div class="section">
+            <h2>Чати</h2>
+            <p>Тут будуть доступні чати.</p>
+        </div>
+    `;
+}
+
+document.addEventListener('DOMContentLoaded', () => app.init());

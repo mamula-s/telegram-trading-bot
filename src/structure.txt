@@ -1,0 +1,70 @@
+src
+├── admin
+│   ├── middleware
+│   │   └── auth.js
+│   ├── routes
+│   │   ├── dashboard.js
+│   │   ├── educationalMaterials.js
+│   │   ├── futuresSignals.js
+│   │   ├── index.js
+│   │   ├── referralSystem.js
+│   │   ├── reviews.js
+│   │   ├── spotSignals.js
+│   │   └── users.js
+│   ├── routes.js
+│   └── views
+│       ├── dashboard.ejs
+│       ├── educationalMaterials.ejs
+│       ├── futuresSignals.ejs
+│       ├── layout.ejs
+│       ├── referralSystem.ejs
+│       ├── reviews.ejs
+│       ├── spotSignals.ejs
+│       └── users.ejs
+├── bot
+│   ├── commands
+│   │   └── index.js
+│   └── handlers
+│       ├── materialHandler.js
+│       └── signalHandler.js
+├── config
+│   ├── privileges.js
+│   └── subscriptions.js
+├── database
+│   ├── connection.js
+│   └── sequelize.js
+├── index.js
+├── models
+│   ├── EducationalMaterial.js
+│   ├── FuturesSignal.js
+│   ├── ReferralCode.js
+│   ├── Review.js
+│   ├── Signal.js
+│   ├── SpotSignal.js
+│   └── User.js
+├── public
+│   ├── admin.html
+│   ├── css
+│   │   └── admin.css
+│   ├── js
+│   │   └── admin.js
+│   ├── styles.css
+│   ├── webapp.css
+│   ├── webapp.html
+│   └── webapp.js
+├── routes
+│   └── adminRoutes.js
+├── services
+│   ├── botService.js
+│   ├── educationalMaterialService.js
+│   ├── materialService.js
+│   ├── paymentService.js
+│   ├── referralService.js
+│   ├── reviewService.js
+│   ├── signalService.js
+│   ├── subscriptionService.js
+│   └── userService.js
+├── structure.txt
+└── webApp
+
+17 directories, 51 files

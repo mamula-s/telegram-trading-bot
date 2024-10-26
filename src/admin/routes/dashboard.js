@@ -1,35 +1,43 @@
-<h1>Панель керування</h1>
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Всього користувачів</h5>
-                <p class="card-text"><%= totalUsers %></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Активні підписки</h5>
-                <p class="card-text"><%= activeSubscriptions %></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Всього сигналів</h5>
-                <p class="card-text"><%= totalSignals %></p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Дохід</h5>
-                <p class="card-text">$<%= totalRevenue %></p>
-            </div>
-        </div>
-    </div>
-</div>
+const express = require('express');
+const router = express.Router();
+const userService = require('../../services/userService');
+const signalService = require('../../services/signalService');
+const subscriptionService = require('../../services/subscriptionService');
+
+router.get('/', async (req, res) => {
+    try {
+        res.render('dashboard', { 
+            title: 'Dashboard',
+            layout: 'layout'
+        });
+    } catch (error) {
+        console.error('Error rendering dashboard:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.get('/api/dashboard-data', async (req, res) => {
+    try {
+        const [
+            totalUsers,
+            activeSubscriptions,
+            totalSignals,
+            monthlyRevenue,
+            recentActivity
+        ] = await Promise.all([
+            userService.getTotalUsers(),
+            subscriptionService.getActiveSubscriptionsCount(),
+            signalService.getTotalSignalsCount(),
+            subscriptionService.getMonthlyRevenue(),
+            userService.getRecentActivity(10) // останні 10 активностей
+        ]);
+
+        res.json({
+            totalUsers,
+            activeSubscriptions,
+            totalSignals,
+            monthlyRevenue,
+            recentActivity
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard data:', error);

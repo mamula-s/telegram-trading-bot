@@ -1,219 +1,262 @@
+// src/services/userService.js
+const { Op } = require('sequelize');
 const User = require('../models/User');
+const UserActivity = require('../models/UserActivity');
 const { privilegedUserIds, developerId } = require('../config/privileges');
 const subscriptions = require('../config/subscriptions');
 
-const createUser = async (userData) => {
-  try {
-    const [user, created] = await User.findOrCreate({
-      where: { telegramId: userData.telegramId },
-      defaults: userData
-    });
-    console.log(`Користувач ${created ? 'створений' : 'оновлений'}:`, user.toJSON());
-    return user;
-  } catch (error) {
-    console.error('Помилка створення/оновлення користувача:', error);
-    throw error;
-  }
-};
-
-const getUserByTelegramId = async (telegramId) => {
-  try {
-    const user = await User.findOne({ where: { telegramId } });
-    console.log(`Отримано користувача:`, user ? user.toJSON() : null);
-    return user;
-  } catch (error) {
-    console.error('Помилка отримання користувача:', error);
-    throw error;
-  }
-};
-
-const updateUser = async (telegramId, updateData) => {
-  try {
-    const [updatedRowsCount, updatedUsers] = await User.update(updateData, {
-      where: { telegramId },
-      returning: true,
-    });
-    if (updatedRowsCount === 0) {
-      console.log(`Користувача з ID ${telegramId} не знайдено для оновлення`);
-      return null;
+class UserService {
+    // Існуючі методи
+    async createUser(userData) {
+        try {
+            const [user, created] = await User.findOrCreate({
+                where: { telegramId: userData.telegramId },
+                defaults: userData
+            });
+            console.log(`Користувач ${created ? 'створений' : 'оновлений'}:`, user.toJSON());
+            return user;
+        } catch (error) {
+            console.error('Помилка створення/оновлення користувача:', error);
+            throw error;
+        }
     }
-    console.log(`Оновлено користувача:`, updatedUsers[0].toJSON());
-    return updatedUsers[0];
-  } catch (error) {
-    console.error('Помилка оновлення користувача:', error);
-    throw error;
-  }
-};
 
-const getAllUsers = async () => {
-  try {
-    const users = await User.findAll();
-    console.log(`Отримано всіх користувачів. Кількість:`, users.length);
-    return users;
-  } catch (error) {
-    console.error('Помилка отримання всіх користувачів:', error);
-    throw error;
-  }
-};
-
-const getSubscribedUsers = async (subscriptionType) => {
-  try {
-    const query = { isSubscribed: true };
-    if (subscriptionType) {
-      query.subscriptionType = subscriptionType;
+    async getUserByTelegramId(telegramId) {
+        try {
+            const user = await User.findOne({ where: { telegramId } });
+            console.log(`Отримано користувача:`, user ? user.toJSON() : null);
+            return user;
+        } catch (error) {
+            console.error('Помилка отримання користувача:', error);
+            throw error;
+        }
     }
-    const users = await User.findAll({ where: query });
-    console.log(`Отримано підписаних користувачів. Кількість:`, users.length);
-    return users;
-  } catch (error) {
-    console.error('Помилка отримання підписаних користувачів:', error);
-    throw error;
-  }
-};
 
+    async updateUser(telegramId, updateData) {
+        try {
+            const [updatedRowsCount, updatedUsers] = await User.update(updateData, {
+                where: { telegramId },
+                returning: true,
+            });
+            if (updatedRowsCount === 0) {
+                console.log(`Користувача з ID ${telegramId} не знайдено для оновлення`);
+                return null;
+            }
+            console.log(`Оновлено користувача:`, updatedUsers[0].toJSON());
+            return updatedUsers[0];
+        } catch (error) {
+            console.error('Помилка оновлення користувача:', error);
+            throw error;
+        }
+    }
 
-const updateUserSubscription = async (telegramId) => {
-  console.log(`Оновлення підписки для користувача ${telegramId}`);
-  console.log(`Привілейовані ID:`, privilegedUserIds);
-  console.log(`ID розробника:`, developerId);
+    async getAllUsers() {
+        try {
+            const users = await User.findAll();
+            console.log(`Отримано всіх користувачів. Кількість:`, users.length);
+            return users;
+        } catch (error) {
+            console.error('Помилка отримання всіх користувачів:', error);
+            throw error;
+        }
+    }
 
-  const user = await User.findOne({ where: { telegramId } });
-  if (!user) {
-    console.log(`Користувача з ID ${telegramId} не знайдено`);
-    return null;
-  }
+    // Нові методи для адмін-панелі
+    async getUsers(page = 1, limit = 10, search = '') {
+        try {
+            const offset = (page - 1) * limit;
+            let whereClause = {};
 
-  const isPrivileged = privilegedUserIds.includes(telegramId) || telegramId === developerId;
-  console.log(`Користувач ${telegramId} є привілейованим: ${isPrivileged}`);
-  
-  if (isPrivileged) {
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            if (search) {
+                whereClause = {
+                    [Op.or]: [
+                        { username: { [Op.like]: `%${search}%` } },
+                        { email: { [Op.like]: `%${search}%` } },
+                        { telegramId: { [Op.like]: `%${search}%` } }
+                    ]
+                };
+            }
 
-    await user.update({
-      isSubscribed: true,
-      subscriptionType: 'FULL',
-      subscriptionEndDate: oneYearFromNow
-    });
-    console.log(`Оновлено підписку для користувача ${telegramId} до FULL`);
-  } else {
-    console.log(`Користувач ${telegramId} не є привілейованим, підписку не оновлено`);
-  }
+            const { rows: users, count: total } = await User.findAndCountAll({
+                where: whereClause,
+                limit,
+                offset,
+                order: [['createdAt', 'DESC']],
+                include: ['subscription']
+            });
 
-  const updatedUser = await User.findOne({ where: { telegramId } });
-  console.log('Оновлений користувач:', updatedUser.toJSON());
+            return { users, total };
+        } catch (error) {
+            console.error('Помилка отримання користувачів:', error);
+            throw error;
+        }
+    }
 
-  return updatedUser;
-};
+    async getUserById(id) {
+        try {
+            const user = await User.findByPk(id, {
+                include: [
+                    'subscription',
+                    {
+                        model: UserActivity,
+                        as: 'activities',
+                        limit: 10,
+                        order: [['createdAt', 'DESC']]
+                    }
+                ]
+            });
 
-const checkAndUpdateSubscription = async (user) => {
-  if (user.subscriptionEndDate && user.subscriptionEndDate < new Date()) {
-    console.log(`Підписка користувача ${user.telegramId} закінчилась`);
-    await user.update({
-      isSubscribed: false,
-      subscriptionType: 'free',
-      subscriptionEndDate: null
-    });
-    console.log(`Скинуто підписку для користувача ${user.telegramId}`);
-  }
-  return user;
-};
+            if (!user) {
+                throw new Error('Користувача не знайдено');
+            }
 
-const subscribeUser = async (telegramId, subscriptionType, duration) => {
-  try {
-    const user = await User.findOne({ where: { telegramId } });
-    if (!user) throw new Error('Користувача не знайдено');
+            return user;
+        } catch (error) {
+            console.error('Помилка отримання користувача за ID:', error);
+            throw error;
+        }
+    }
 
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + duration);
+    async getSubscribedUsers(subscriptionType) {
+        try {
+            const query = { isSubscribed: true };
+            if (subscriptionType) {
+                query.subscriptionType = subscriptionType;
+            }
+            const users = await User.findAll({ where: query });
+            console.log(`Отримано підписаних користувачів. Кількість:`, users.length);
+            return users;
+        } catch (error) {
+            console.error('Помилка отримання підписаних користувачів:', error);
+            throw error;
+        }
+    }
 
-    await user.update({
-      isSubscribed: true,
-      subscriptionType: subscriptionType,
-      subscriptionEndDate: endDate
-    });
+    async updateUserSubscription(telegramId, subscriptionType = null, months = null) {
+        console.log(`Оновлення підписки для користувача ${telegramId}`);
+        try {
+            const user = await User.findOne({ where: { telegramId } });
+            if (!user) {
+                console.log(`Користувача з ID ${telegramId} не знайдено`);
+                return null;
+            }
 
-    console.log(`Оформлено підписку ${subscriptionType} для користувача ${telegramId}`);
-    return user;
-  } catch (error) {
-    console.error('Помилка оформлення підписки:', error);
-    throw error;
-  }
-};
+            const isPrivileged = privilegedUserIds.includes(telegramId) || telegramId === developerId;
+            console.log(`Користувач ${telegramId} є привілейованим: ${isPrivileged}`);
 
-const addSubscription = async (telegramId, subscriptionId) => {
-  const user = await User.findOne({ where: { telegramId } });
-  if (!user) throw new Error('Користувача не знайдено');
+            if (isPrivileged) {
+                const oneYearFromNow = new Date();
+                oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
-  const isPrivileged = privilegedUserIds.includes(telegramId) || telegramId === developerId;
+                await user.update({
+                    isSubscribed: true,
+                    subscriptionType: 'FULL',
+                    subscriptionEndDate: oneYearFromNow
+                });
+                console.log(`Оновлено підписку для користувача ${telegramId} до FULL`);
+            } else if (subscriptionType && months) {
+                const endDate = new Date();
+                endDate.setMonth(endDate.getMonth() + parseInt(months));
 
-  if (isPrivileged) {
-    console.log(`Користувач ${telegramId} є привілейованим і вже має FULL підписку`);
-    return user;
-  }
+                await user.update({
+                    isSubscribed: true,
+                    subscriptionType,
+                    subscriptionEndDate: endDate
+                });
 
-  // Тут буде логіка перевірки оплати підписки
-  // Наразі просто виводимо повідомлення
-  console.log(`Користувач ${telegramId} намагається додати підписку ${subscriptionId}. Необхідна оплата.`);
+                await this.createUserActivity(user.id, 'SUBSCRIPTION_UPDATE',
+                    `Оновлено підписку на ${subscriptionType} на ${months} місяців`);
+            }
 
-  // Повертаємо користувача без змін, оскільки оплата ще не реалізована
-  return user;
-};
+            const updatedUser = await User.findOne({ where: { telegramId } });
+            console.log('Оновлений користувач:', updatedUser.toJSON());
+            return updatedUser;
+        } catch (error) {
+            console.error('Помилка оновлення підписки:', error);
+            throw error;
+        }
+    }
 
-const removeSubscription = async (telegramId, subscriptionId) => {
-  const user = await User.findOne({ where: { telegramId } });
-  if (!user) throw new Error('Користувача не знайдено');
+    async toggleUserBlock(userId, blocked) {
+        try {
+            const user = await this.getUserById(userId);
+            await user.update({ isBlocked: blocked });
 
-  const userSubscriptions = user.subscriptions.filter(sub => sub !== subscriptionId);
+            await this.createUserActivity(userId, 'ACCESS_TOGGLE',
+                blocked ? 'Користувача заблоковано' : 'Користувача розблоковано');
 
-  await user.update({
-    subscriptions: userSubscriptions,
-    isSubscribed: userSubscriptions.length > 0,
-    subscriptionType: userSubscriptions.length > 0 ? user.subscriptionType : 'free',
-    subscriptionEndDate: userSubscriptions.length > 0 ? user.subscriptionEndDate : null
-  });
+            return user;
+        } catch (error) {
+            console.error('Помилка зміни статусу блокування:', error);
+            throw error;
+        }
+    }
 
-  console.log(`Видалено підписку ${subscriptionId} для користувача ${telegramId}`);
-  return user;
-};
+    async checkAndUpdateSubscription(user) {
+        try {
+            if (user.subscriptionEndDate && user.subscriptionEndDate < new Date()) {
+                console.log(`Підписка користувача ${user.telegramId} закінчилась`);
+                await user.update({
+                    isSubscribed: false,
+                    subscriptionType: 'free',
+                    subscriptionEndDate: null
+                });
+                console.log(`Скинуто підписку для користувача ${user.telegramId}`);
+            }
+            return user;
+        } catch (error) {
+            console.error('Помилка перевірки підписки:', error);
+            throw error;
+        }
+    }
 
-const getActiveSubscriptions = async (telegramId) => {
-  const user = await User.findOne({ where: { telegramId } });
-  if (!user) throw new Error('Користувача не знайдено');
+    async checkAccess(telegramId, requiredSubscription) {
+        try {
+            const activeSubscriptions = await this.getActiveSubscriptions(telegramId);
+            const hasAccess = activeSubscriptions.includes(requiredSubscription) || activeSubscriptions.includes('FULL');
+            console.log(`Перевірка доступу для користувача ${telegramId} до ${requiredSubscription}: ${hasAccess}`);
+            return hasAccess;
+        } catch (error) {
+            console.error('Помилка перевірки доступу:', error);
+            throw error;
+        }
+    }
 
-  if (new Date() > user.subscriptionEndDate) {
-    await user.update({
-      isSubscribed: false,
-      subscriptionType: 'free',
-      subscriptions: [],
-      subscriptionEndDate: null
-    });
-    console.log(`Скинуто всі підписки для користувача ${telegramId} через закінчення терміну`);
-    return [];
-  }
+    async createUserActivity(userId, action, details) {
+        try {
+            return await UserActivity.create({
+                userId,
+                action,
+                details
+            });
+        } catch (error) {
+            console.error('Помилка створення активності користувача:', error);
+            throw error;
+        }
+    }
 
-  console.log(`Активні підписки користувача ${telegramId}:`, user.subscriptions);
-  return user.subscriptions;
-};
+    async getTotalUsers() {
+        try {
+            return await User.count();
+        } catch (error) {
+            console.error('Помилка отримання загальної кількості користувачів:', error);
+            throw error;
+        }
+    }
 
-const checkAccess = async (telegramId, requiredSubscription) => {
-  const activeSubscriptions = await getActiveSubscriptions(telegramId);
-  const hasAccess = activeSubscriptions.includes(requiredSubscription) || activeSubscriptions.includes('FULL');
-  console.log(`Перевірка доступу для користувача ${telegramId} до ${requiredSubscription}: ${hasAccess}`);
-  return hasAccess;
-};
+    async getActiveUsers() {
+        try {
+            return await User.count({
+                where: {
+                    isBlocked: false,
+                    isSubscribed: true
+                }
+            });
+        } catch (error) {
+            console.error('Помилка отримання кількості активних користувачів:', error);
+            throw error;
+        }
+    }
+}
 
-module.exports = {
-  createUser,
-  getUserByTelegramId,
-  updateUser,
-  getAllUsers,
-  getSubscribedUsers,
-  updateUserSubscription,
-  checkAndUpdateSubscription,
-  subscribeUser,
-  addSubscription,
-  removeSubscription,
-  getActiveSubscriptions,
-  checkAccess
-};
+module.exports = new UserService();

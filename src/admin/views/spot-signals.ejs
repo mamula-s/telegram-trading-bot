@@ -1,0 +1,257 @@
+<!-- src/admin/views/spot-signals.ejs -->
+<%- include('partials/header') %>
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Фільтри та створення нового сигналу -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex-1">
+            <form action="/admin/spot-signals" method="GET" class="flex gap-4">
+                <input 
+                    type="text" 
+                    name="pair" 
+                    value="<%= filters.pair %>"
+                    placeholder="Торгова пара" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Всі статуси</option>
+                    <option value="ACTIVE" <%= filters.status === 'ACTIVE' ? 'selected' : '' %>>Активні</option>
+                    <option value="CLOSED" <%= filters.status === 'CLOSED' ? 'selected' : '' %>>Закриті</option>
+                    <option value="CANCELLED" <%= filters.status === 'CANCELLED' ? 'selected' : '' %>>Скасовані</option>
+                </select>
+                <input 
+                    type="date" 
+                    name="dateFrom" 
+                    value="<%= filters.dateFrom %>"
+                    class="px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                <input 
+                    type="date" 
+                    name="dateTo" 
+                    value="<%= filters.dateTo %>"
+                    class="px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                <button 
+                    type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                    Фільтрувати
+                </button>
+            </form>
+        </div>
+        <button 
+            onclick="openNewSignalModal()"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+            + Новий сигнал
+        </button>
+    </div>
+
+    <!-- Таблиця сигналів -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Пара</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Напрямок</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Вхід</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">TP</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SL</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Результат</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дії</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <% signals.forEach(signal => { %>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= new Date(signal.createdAt).toLocaleString() %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <%= signal.pair %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                <%= signal.direction === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                <%= signal.direction %>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= signal.entryPrice %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= signal.takeProfit %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= signal.stopLoss %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                <%= signal.status === 'ACTIVE' ? 'bg-blue-100 text-blue-800' :
+                                    signal.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                                    'bg-red-100 text-red-800' %>">
+                                <%= signal.status %>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <% if (signal.result) { %>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    <%= signal.result > 0 ? 'bg-green-100 text-green-800' : 
+                                        signal.result < 0 ? 'bg-red-100 text-red-800' : 
+                                        'bg-gray-100 text-gray-800' %>">
+                                    <%= signal.result %>%
+                                </span>
+                            <% } %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="/admin/spot-signals/<%= signal.id %>" 
+                               class="text-blue-600 hover:text-blue-900 mr-3">
+                                Деталі
+                            </a>
+                            <% if (signal.status === 'ACTIVE') { %>
+                                <button onclick="openCloseSignalModal('<%= signal.id %>')"
+                                        class="text-green-600 hover:text-green-900 mr-3">
+                                    Закрити
+                                </button>
+                            <% } %>
+                            <button onclick="deleteSignal('<%= signal.id %>')"
+                                    class="text-red-600 hover:text-red-900">
+                                Видалити
+                            </button>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Пагінація -->
+    <div class="mt-6 flex justify-between items-center">
+        <div class="text-sm text-gray-700">
+            Показано <%= (currentPage - 1) * limit + 1 %> - <%= Math.min(currentPage * limit, total) %> з <%= total %> сигналів
+        </div>
+        <div class="flex gap-2">
+            <% if (currentPage > 1) { %>
+                <a href="/admin/spot-signals?page=<%= currentPage - 1 %>&limit=<%= limit %>"
+                   class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Попередня
+                </a>
+            <% } %>
+            <% if (currentPage < totalPages) { %>
+                <a href="/admin/spot-signals?page=<%= currentPage + 1 %>&limit=<%= limit %>"
+                   class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Наступна
+                </a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Модальне вікно для створення нового сигналу -->
+<%- include('partials/new-signal-modal') %>
+
+<!-- Модальне вікно для закриття сигналу -->
+<%- include('partials/close-signal-modal') %>
+
+<script>
+    function openNewSignalModal() {
+        document.getElementById('newSignalModal').classList.remove('hidden');
+    }
+    
+    function closeNewSignalModal() {
+        document.getElementById('newSignalModal').classList.add('hidden');
+    }
+    
+    function openCloseSignalModal(signalId) {
+        document.getElementById('closeSignalId').value = signalId;
+        document.getElementById('closeSignalModal').classList.remove('hidden');
+    }
+    
+    function closeCloseSignalModal() {
+        document.getElementById('closeSignalModal').classList.add('hidden');
+    }
+    
+    async function createSignal(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        try {
+            const response = await fetch('/admin/spot-signals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(Object.fromEntries(formData))
+            });
+            
+            if (response.ok) {
+                showNotification('Сигнал успішно створено', 'success');
+                closeNewSignalModal();
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                showNotification(data.message || 'Помилка створення сигналу', 'error');
+            }
+        } catch (error) {
+            showNotification('Помилка створення сигналу', 'error');
+        }
+    }
+    
+    async function closeSignal(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const signalId = document.getElementById('closeSignalId').value;
+        
+        try {
+            const response = await fetch(`/admin/spot-signals/${signalId}/close`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(Object.fromEntries(formData))
+            });
+            
+            if (response.ok) {
+                showNotification('Сигнал успішно закрито', 'success');
+                closeCloseSignalModal();
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                showNotification(data.message || 'Помилка закриття сигналу', 'error');
+            }
+        } catch (error) {
+            showNotification('Помилка закриття сигналу', 'error');
+        }
+    }
+    
+    async function deleteSignal(signalId) {
+        if (!confirm('Ви впевнені, що хочете видалити цей сигнал?')) return;
+        
+        try {
+            const response = await fetch(`/admin/spot-signals/${signalId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                showNotification('Сигнал успішно видалено', 'success');
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                showNotification(data.message || 'Помилка видалення сигналу', 'error');
+            }
+        } catch (error) {
+            showNotification('Помилка видалення сигналу', 'error');
+        }
+    }
+    
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+    </script>
