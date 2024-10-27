@@ -69,6 +69,15 @@ app.get('/webapp', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
 });
 
+app.get('/webapp*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
+});
+
+// Обробка 404 для веб-додатку
+app.use('/webapp/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
+});
+
 app.get('/api/portfolio', async (req, res) => {
   res.json([
     { asset: 'BTC', amount: 0.5, value: 15000 },

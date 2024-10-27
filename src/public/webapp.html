@@ -5,13 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Trading Bot Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="styles.css" rel="stylesheet">
-</head>
-<body>
-    <div id="root"></div>
     <script>
-        // Перевіряємо чи додаток відкритий в Telegram
-        if (!window.Telegram.WebApp) {
+        if (!window.Telegram) {
             window.Telegram = {
                 WebApp: {
                     ready: () => {},
@@ -28,6 +23,10 @@
             };
         }
     </script>
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div id="root"></div>
     <script src="webapp.bundle.js"></script>
 </body>
 </html>
