@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
@@ -16,7 +17,10 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env', '@babel/preset-react']
+            presets: [
+              '@babel/preset-env',
+              ['@babel/preset-react', { runtime: 'automatic' }]
+            ]
           }
         }
       },
@@ -29,5 +33,10 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx']
   },
-  devtool: process.env.NODE_ENV === 'production' ? 'source-map' : 'eval-source-map'
+  plugins: [
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    })
+  ],
+  devtool: 'source-map'
 };

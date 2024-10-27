@@ -6,14 +6,16 @@
     <title>Trading Bot Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        console.log('Starting initialization...');
         if (!window.Telegram) {
+            console.log('Creating Telegram mock...');
             window.Telegram = {
                 WebApp: {
-                    ready: () => {},
+                    ready: () => { console.log('WebApp ready called'); },
                     MainButton: {
-                        show: () => {},
-                        hide: () => {},
-                        setText: () => {}
+                        show: () => { console.log('Show button called'); },
+                        hide: () => { console.log('Hide button called'); },
+                        setText: () => { console.log('Set text called'); }
                     },
                     backgroundColor: '#ffffff',
                     textColor: '#000000',
@@ -26,7 +28,22 @@
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Додамо тестовий контент -->
+    <h1 id="test-header" style="display: none;">Test Content</h1>
+    
     <div id="root"></div>
+    
+    <!-- Додамо скрипт для тестування -->
+    <script>
+        console.log('DOM loaded, root element:', document.getElementById('root'));
+    </script>
     <script src="webapp.bundle.js"></script>
+    <script>
+        console.log('Bundle loaded');
+        // Перевіримо чи React почав рендеринг
+        setTimeout(() => {
+            console.log('After timeout, root children:', document.getElementById('root').children);
+        }, 1000);
+    </script>
 </body>
 </html>
