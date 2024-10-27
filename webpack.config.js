@@ -16,7 +16,10 @@ module.exports = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ['@babel/preset-react']
+                        presets: [
+                            '@babel/preset-env',
+                            ['@babel/preset-react', { runtime: 'automatic' }]
+                        ]
                     }
                 }
             },
@@ -27,6 +30,10 @@ module.exports = {
         ]
     },
     resolve: {
-        extensions: ['.js', '.jsx']
-    }
+        extensions: ['.js', '.jsx'],
+        alias: {
+            '@': path.resolve(__dirname, 'src/webApp')
+        }
+    },
+    devtool: process.env.NODE_ENV === 'development' ? 'source-map' : false
 };
