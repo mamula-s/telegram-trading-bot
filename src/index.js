@@ -27,8 +27,9 @@ app.set('views', path.join(__dirname, 'views'));
 const basicAuth = require('express-basic-auth');
 
 app.use('/admin', basicAuth({
-  users: { 'admin': 'password' }, // Змініть це на безпечний пароль
-  challenge: true
+  users: { 'admin': 'admin123' },
+  challenge: true,
+  realm: 'Trading Bot Admin Panel'
 }));
 
 // Використання маршрутів адмін-панелі

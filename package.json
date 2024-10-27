@@ -10,7 +10,6 @@
     "seed": "sequelize-cli db:seed:all",
     "seed:undo": "sequelize-cli db:seed:undo:all",
     "heroku-postbuild": "npm run migrate"
-    
   },
   "keywords": [],
   "author": "",
