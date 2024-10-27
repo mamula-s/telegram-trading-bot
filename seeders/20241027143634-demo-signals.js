@@ -1,4 +1,4 @@
-// src/database/seeders/YYYYMMDDHHMMSS-demo-signals.js
+// seeders/XXXXXXXXXXXXXX-demo-signals.js
 'use strict';
 
 module.exports = {
@@ -10,6 +10,7 @@ module.exports = {
       entryPrice: '35000',
       takeProfit: '37000',
       stopLoss: '34000',
+      timeframe: '4h',  // Обов'язкове поле
       riskLevel: 'MEDIUM',
       description: 'Test spot signal',
       status: 'ACTIVE',
