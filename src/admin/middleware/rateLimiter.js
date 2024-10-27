@@ -9,7 +9,7 @@ const rateLimiter = (options = {}) => {
             error: 'Забагато запитів. Спробуйте пізніше.'
         },
         handler: (req, res) => {
-            res.render('forgot-password', {
+            res.status(429).render('error', {
                 layout: false,
                 error: 'Забагато запитів. Будь ласка, спробуйте пізніше.'
             });

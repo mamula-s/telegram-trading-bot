@@ -2,7 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const adminService = require('../../services/adminService');
+const { rateLimiter } = require('../middleware/rateLimiter');
 
+// Аутентифікація
 router.get('/login', (req, res) => {
     res.render('login', { layout: false });
 });
@@ -21,7 +23,6 @@ router.post('/login', async (req, res) => {
 
         const token = adminService.generateToken(admin);
         
-        // Встановлюємо cookie
         res.cookie('adminToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -42,11 +43,13 @@ router.get('/logout', (req, res) => {
     res.clearCookie('adminToken');
     res.redirect('/admin/login');
 });
-// Додаємо rate limiting для захисту від брутфорсу
+
+// Використовуємо rate limiter для захисту від перебору
 router.use('/forgot-password', rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 хвилин
     max: 5 // максимум 5 запитів
 }));
+
 
 router.post('/forgot-password', async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-// XXXXXXXXXX-create-signals.js (файл з часовою міткою)
+// src/database/migrations/YYYYMMDDHHMMSS-create-signals.js
 'use strict';
 
 module.exports = {
@@ -32,10 +32,6 @@ module.exports = {
       },
       stopLoss: {
         type: Sequelize.DECIMAL(20, 8),
-        allowNull: false
-      },
-      timeframe: {
-        type: Sequelize.STRING,
         allowNull: false
       },
       riskLevel: {
