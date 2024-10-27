@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './styles/tailwind.css';
 
+// Initialize Telegram WebApp
+window.Telegram?.WebApp?.ready();
+
+// Initialize React app
 const container = document.getElementById('root');
 const root = createRoot(container);
 
