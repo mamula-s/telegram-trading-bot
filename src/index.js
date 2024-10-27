@@ -105,30 +105,21 @@ app.get('/webhook-info', async (req, res) => {
 });
 
 
-app.get('/api/me', async (req, res) => {
-  try {
-      const initData = req.headers['x-telegram-init-data'];
-      // Тут можна додати валідацію initData
-      // TODO: Додати валідацію даних від Telegram
-      
-      res.json({
-          success: true,
-          user: {
-              // Тестові дані
-              name: 'Test User',
-              balance: 10000,
-              profitToday: 5.2,
-              totalProfit: 15.7,
-              subscription: 'PREMIUM'
-          }
-      });
-  } catch (error) {
-      console.error('Error fetching user data:', error);
-      res.status(500).json({ 
-          success: false, 
-          error: 'Internal server error' 
-      });
-  }
+// Маршрут для API
+app.get('/api/user-data', (req, res) => {
+    const initData = req.headers['x-telegram-init-data'];
+    // TODO: Додати валідацію даних від Telegram
+    
+    res.json({
+        success: true,
+        user: {
+            name: 'Serhii Mamula 🚀',
+            balance: 10000,
+            profitToday: 5.2,
+            totalProfit: 15.7,
+            subscription: 'FULL'
+        }
+    });
 });
 
 // API для налаштувань

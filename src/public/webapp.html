@@ -12,7 +12,20 @@
     <script>
         // Перевіряємо чи додаток відкритий в Telegram
         if (!window.Telegram.WebApp) {
-            document.body.innerHTML = '<div style="padding: 20px; text-align: center;">Цей додаток працює тільки в Telegram</div>';
+            window.Telegram = {
+                WebApp: {
+                    ready: () => {},
+                    MainButton: {
+                        show: () => {},
+                        hide: () => {},
+                        setText: () => {}
+                    },
+                    backgroundColor: '#ffffff',
+                    textColor: '#000000',
+                    buttonColor: '#3390ec',
+                    buttonTextColor: '#ffffff'
+                }
+            };
         }
     </script>
     <script src="webapp.bundle.js"></script>
