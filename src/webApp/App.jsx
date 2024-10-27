@@ -3,17 +3,19 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import MainPage from './pages/MainPage';
 import FuturesPage from './pages/FuturesPage';
-// TODO: Import other pages
+import { NotificationProvider } from './contexts/NotificationContext';
 
 const App = () => {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/futures" element={<FuturesPage />} />
-        {/* TODO: Add other routes */}
-      </Routes>
-    </Layout>
+    <NotificationProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/futures" element={<FuturesPage />} />
+          {/* TODO: Add other routes */}
+        </Routes>
+      </Layout>
+    </NotificationProvider>
   );
 };
 
