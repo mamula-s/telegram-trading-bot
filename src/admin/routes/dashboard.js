@@ -1,3 +1,4 @@
+// src/admin/routes/dashboard.js
 const express = require('express');
 const router = express.Router();
 const userService = require('../../services/userService');
@@ -29,7 +30,7 @@ router.get('/api/dashboard-data', async (req, res) => {
             subscriptionService.getActiveSubscriptionsCount(),
             signalService.getTotalSignalsCount(),
             subscriptionService.getMonthlyRevenue(),
-            userService.getRecentActivity(10) // останні 10 активностей
+            userService.getRecentActivity(10)
         ]);
 
         res.json({
@@ -41,3 +42,8 @@ router.get('/api/dashboard-data', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+module.exports = router;
