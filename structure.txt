@@ -1,0 +1,116 @@
+.
+├── Procfile
+├── config
+│   ├── config.js
+│   └── config.json
+├── migrations
+│   ├── 20241027110635-create-users.js
+│   ├── 20241027110647-create-signals.js
+│   └── 20241027143005-create-admins.js
+├── models
+│   └── index.js
+├── package-lock.json
+├── package.json
+├── seeders
+│   ├── 20241027143634-demo-signals.js
+│   └── 20241027143644-create-admin.js
+├── src
+│   ├── admin
+│   │   ├── middleware
+│   │   │   ├── auth.js
+│   │   │   └── rateLimiter.js
+│   │   ├── routes
+│   │   │   ├── auth.js
+│   │   │   ├── dashboard.js
+│   │   │   ├── educationalMaterials.js
+│   │   │   ├── futuresSignals.js
+│   │   │   ├── index.js
+│   │   │   ├── referralSystem.js
+│   │   │   ├── reviews.js
+│   │   │   ├── spotSignals.js
+│   │   │   └── users.js
+│   │   ├── routes.js
+│   │   └── views
+│   │       ├── dashboard.ejs
+│   │       ├── educationalMaterials.ejs
+│   │       ├── forgot-password.ejs
+│   │       ├── futures-signal-details.ejs
+│   │       ├── futures-signals.ejs
+│   │       ├── layout.ejs
+│   │       ├── login.ejs
+│   │       ├── partials
+│   │       │   ├── close-signal-modal.ejs
+│   │       │   ├── new-signal-modal.ejs
+│   │       │   └── signals-statistics.ejs
+│   │       ├── referralSystem.ejs
+│   │       ├── reset-password.ejs
+│   │       ├── reviews.ejs
+│   │       ├── spot-signal-details.ejs
+│   │       ├── spot-signals.ejs
+│   │       ├── user-details.ejs
+│   │       └── users.ejs
+│   ├── bot
+│   │   ├── commands
+│   │   │   ├── index.js
+│   │   │   └── types.js
+│   │   └── handlers
+│   │       ├── materialHandler.js
+│   │       └── signalHandler.js
+│   ├── config
+│   │   ├── config.js
+│   │   ├── privileges.js
+│   │   └── subscriptions.js
+│   ├── database
+│   │   ├── connection.js
+│   │   ├── migrations
+│   │   │   ├── 20241027110635-create-users.js
+│   │   │   └── 20241027110647-create-signals.js
+│   │   ├── seeds
+│   │   │   └── createAdmin.js
+│   │   └── sequelize.js
+│   ├── index.js
+│   ├── models
+│   │   ├── Admin.js
+│   │   ├── EducationalMaterial.js
+│   │   ├── FuturesSignal.js
+│   │   ├── ReferralCode.js
+│   │   ├── Review.js
+│   │   ├── Signal.js
+│   │   ├── SpotSignal.js
+│   │   ├── User.js
+│   │   └── UserActivity.js
+│   ├── public
+│   │   ├── admin.html
+│   │   ├── css
+│   │   │   └── admin.css
+│   │   ├── js
+│   │   │   └── admin.js
+│   │   ├── styles.css
+│   │   ├── webapp.css
+│   │   ├── webapp.html
+│   │   └── webapp.js
+│   ├── routes
+│   │   └── adminRoutes.js
+│   ├── services
+│   │   ├── adminService.js
+│   │   ├── botService.js
+│   │   ├── educationalMaterialService.js
+│   │   ├── emailService.js
+│   │   ├── materialService.js
+│   │   ├── paymentService.js
+│   │   ├── referralService.js
+│   │   ├── reviewService.js
+│   │   ├── signalService.js
+│   │   ├── subscriptionService.js
+│   │   └── userService.js
+│   ├── structure.txt
+│   ├── utils
+│   │   └── passwordUtils.js
+│   └── webApp
+├── structure.txt
+├── test-db-connection.js
+└── uploads
+    ├── 1728060013053.jpeg
+    └── 1728061388360.jpeg
+
+27 directories, 87 files
