@@ -115,16 +115,38 @@ module.exports = (bot, userService, signalService, subscriptions) => {
   });
 
   // Команда /webapp
-  bot.onText(/\/webapp/, (msg) => {
-      const chatId = msg.chat.id;
-      bot.sendMessage(chatId, 'Натисніть кнопку нижче, щоб відкрити Web App:', {
-          reply_markup: {
-              keyboard: [[{ text: 'Відкрити Trading Dashboard', web_app: { url: `${process.env.BASE_URL}/webapp` } }]],
-              resize_keyboard: true,
-              one_time_keyboard: false
-          }
-      });
+ // Оновлюємо обробник команди /webapp
+bot.onText(/\/webapp/, (msg) => {
+  const chatId = msg.chat.id;
+  const webAppUrl = 'https://telegram-trading-bot-test-886be91eaaeb.herokuapp.com/webapp';
+  
+  bot.sendMessage(chatId, 'Відкрийте Trading Dashboard:', {
+      reply_markup: {
+          keyboard: [[{
+              text: 'Відкрити Trading Dashboard',
+              web_app: { url: webAppUrl }
+          }]],
+          resize_keyboard: true
+      }
   });
+});
+
+// Додаємо обробник для inline кнопки
+bot.onText(/\/start_webapp/, (msg) => {
+  const chatId = msg.chat.id;
+  const webAppUrl = 'https://telegram-trading-bot-test-886be91eaaeb.herokuapp.com/webapp';
+  
+  bot.sendMessage(chatId, 'Відкрийте Trading Dashboard:', {
+      reply_markup: {
+          inline_keyboard: [[
+              {
+                  text: 'Відкрити Trading Dashboard',
+                  web_app: { url: webAppUrl }
+              }
+          ]]
+      }
+  });
+});
 
   // Обробка callback-запитів
   bot.on('callback_query', async (callbackQuery) => {

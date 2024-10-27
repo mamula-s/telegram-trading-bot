@@ -2,28 +2,19 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Trading Bot Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="/webapp.css">
+    <link href="styles.css" rel="stylesheet">
 </head>
 <body>
-    <div id="app">
-        <h1>Trading Bot Dashboard</h1>
-        <div id="user-info"></div>
-        <div id="portfolio">
-            <h2>Портфоліо</h2>
-            <div id="portfolio-content"></div>
-        </div>
-        <div id="signals">
-            <h2>Останні сигнали</h2>
-            <div id="signals-content"></div>
-        </div>
-        <div id="settings">
-            <h2>Налаштування</h2>
-            <div id="settings-content"></div>
-        </div>
-    </div>
-    <script src="/webapp.js"></script>
+    <div id="root"></div>
+    <script>
+        // Перевіряємо чи додаток відкритий в Telegram
+        if (!window.Telegram.WebApp) {
+            document.body.innerHTML = '<div style="padding: 20px; text-align: center;">Цей додаток працює тільки в Telegram</div>';
+        }
+    </script>
+    <script src="webapp.bundle.js"></script>
 </body>
 </html>
