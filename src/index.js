@@ -13,6 +13,9 @@ const signalService = require('./services/signalService');
 const botService = require('./services/botService');
 const subscriptionService = require('./services/subscriptionService');
 
+const expressLayouts = require('express-ejs-layouts');
+
+
 const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,7 +29,11 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Налаштування шаблонізатора
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'admin', 'views'));
+app.set('views', path.join(__dirname, 'admin/views'));
+app.use(expressLayouts);
+app.set('layout', 'layout');  // використовуємо layout.ejs як базовий шаблон
+app.set("layout extractStyles", true);
+app.set("layout extractScripts", true);
 
 // Налаштування адмін-панелі
 const adminRoutes = require('./admin/routes');
