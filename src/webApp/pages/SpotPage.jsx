@@ -45,7 +45,6 @@ const SpotPage = () => {
       setIsLoading(true);
       const page = reset ? 1 : filters.page;
 
-      // TODO: Replace with actual API calls
       const [statsData, signalsData, holdingsData] = await Promise.all([
         fetch('/api/spot/stats').then(res => res.json()),
         fetch(`/api/spot/signals?${new URLSearchParams({
@@ -288,10 +287,9 @@ const SpotPage = () => {
                 <div
                   key={signal.id}
                   onClick={() => setSelectedSignal(signal)}
-                  className="bg-white rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                >
+                  className="bg-white rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
-                    <div>
+                  <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{signal.pair}</span>
                         <span className={`

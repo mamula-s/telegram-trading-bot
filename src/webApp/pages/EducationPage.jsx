@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Book, Video, File, Clock, Lock, PlayCircle, Download } from 'lucide-react';
 
 const EducationPage = () => {

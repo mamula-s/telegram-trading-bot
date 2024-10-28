@@ -49,6 +49,43 @@ router.get('/api/users', async (req, res) => {
   }
 });
 
+// src/routes/adminRoutes.js
+
+// GET /admin/api/chats - отримання списку чатів
+router.get('/api/chats', async (req, res) => {
+  try {
+    const chats = await Chat.findAll();
+    res.json(chats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch chats' });
+  }
+});
+
+// POST /admin/api/chats - створення нового чату
+router.post('/api/chats', async (req, res) => {
+  try {
+    const chat = await Chat.create(req.body);
+    // Відправляємо повідомлення в бот
+    await botService.notifyNewChat(chat);
+    res.json(chat);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create chat' });
+  }
+});
+
+// PUT /admin/api/chats/:id - оновлення чату
+router.put('/api/chats/:id', async (req, res) => {
+  try {
+    const chat = await Chat.findByPk(req.params.id);
+    await chat.update(req.body);
+    // Відправляємо оновлення в бот
+    await botService.notifyChatUpdate(chat);
+    res.json(chat);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update chat' });
+  }
+});
+
 // API для створення нового сигналу
 router.post('/api/signals', upload.single('image'), async (req, res) => {
   try {

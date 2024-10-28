@@ -154,11 +154,11 @@ const SignalModal = ({
         <div className="bg-yellow-50 p-4 rounded-xl">
           <div className="flex gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
-            <div>
-              <p className="text-sm text-yellow-700 font-medium">
+            <div className="text-sm text-yellow-700">
+              <p className="font-medium">
                 Ризик менеджмент:
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-yellow-600">
+              <ul className="mt-2 space-y-1">
                 <li>• Не ризикуйте більше 1-2% від депозиту</li>
                 <li>• Обов'язково встановлюйте стоп-лос</li>
                 <li>• Не входьте в угоду після сильного руху</li>

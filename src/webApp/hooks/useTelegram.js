@@ -1,36 +1,68 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 const useTelegram = () => {
+  const [ready, setReady] = useState(false);
+  const [user, setUser] = useState(null);
   const tg = window.Telegram?.WebApp;
 
   useEffect(() => {
-    if (tg) {
-      tg.ready();
-      tg.expand();
+    if (!tg) {
+      console.warn('Telegram WebApp is not available');
+      return;
     }
+
+    const handleReady = () => {
+      setReady(true);
+      setUser(tg.initDataUnsafe?.user);
+    };
+
+    tg.ready();
+    handleReady();
+
+    // Set theme colors
+    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+    document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+    document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
+    document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
+
+    // Enable haptic feedback
+    tg.enableClosingConfirmation();
+    tg.setHeaderColor('bg_color');
   }, [tg]);
 
   const showAlert = useCallback((message) => {
     if (tg) {
       tg.showAlert(message);
+    } else {
+      alert(message);
     }
   }, [tg]);
 
   const showConfirm = useCallback((message) => {
-    return new Promise((resolve) => {
-      if (tg) {
+    if (tg) {
+      return new Promise((resolve) => {
         tg.showConfirm(message, (confirmed) => {
           resolve(confirmed);
         });
-      } else {
-        resolve(window.confirm(message));
-      }
-    });
+      });
+    }
+    return Promise.resolve(window.confirm(message));
   }, [tg]);
 
-  const closeWebApp = useCallback(() => {
+  const showPopup = useCallback((params) => {
     if (tg) {
-      tg.close();
+      return new Promise((resolve) => {
+        tg.showPopup(params, (buttonId) => {
+          resolve(buttonId);
+        });
+      });
+    }
+    return Promise.resolve(null);
+  }, [tg]);
+
+  const hapticImpact = useCallback((style = 'medium') => {
+    if (tg?.HapticFeedback) {
+      tg.HapticFeedback.impactOccurred(style);
     }
   }, [tg]);
 
@@ -42,20 +74,37 @@ const useTelegram = () => {
     }
   }, [tg]);
 
-  const getUserData = useCallback(() => {
+  const openTelegramLink = useCallback((url) => {
     if (tg) {
-      return tg.initDataUnsafe?.user || null;
+      tg.openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
     }
-    return null;
+  }, [tg]);
+
+  const expandApp = useCallback(() => {
+    if (tg) {
+      tg.expand();
+    }
+  }, [tg]);
+
+  const closeApp = useCallback(() => {
+    if (tg) {
+      tg.close();
+    }
   }, [tg]);
 
   return {
-    tg,
-    user: getUserData(),
+    ready,
+    user,
     showAlert,
     showConfirm,
-    closeWebApp,
-    openLink
+    showPopup,
+    hapticImpact,
+    openLink,
+    openTelegramLink,
+    expandApp,
+    closeApp
   };
 };
 

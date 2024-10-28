@@ -64,10 +64,6 @@ const PaymentPage = () => {
     }
   ];
 
-  const handleSelectPlan = (plan) => {
-    setSelectedPlan(plan);
-  };
-
   const handlePayment = async (method) => {
     if (!selectedPlan) {
       showAlert('Будь ласка, виберіть план підписки');
@@ -103,7 +99,7 @@ const PaymentPage = () => {
             className={`relative ${
               plan.recommended ? 'text-white' : 'border border-gray-100'
             }`}
-            onClick={() => handleSelectPlan(plan)}
+            onClick={() => setSelectedPlan(plan)}
           >
             {plan.recommended && (
               <div className="absolute -top-3 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-medium">
