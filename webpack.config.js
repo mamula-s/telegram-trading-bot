@@ -18,7 +18,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              '@babel/preset-env',
+              ['@babel/preset-env', { targets: { browsers: ['last 2 versions'] } }],
               ['@babel/preset-react', { runtime: 'automatic' }]
             ]
           }
@@ -35,8 +35,11 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+      'process.env': JSON.stringify({
+        NODE_ENV: process.env.NODE_ENV || 'development',
+        BASE_URL: process.env.BASE_URL || ''
+      })
     })
   ],
-  devtool: 'source-map'
+  devtool: process.env.NODE_ENV === 'production' ? 'source-map' : 'eval-source-map'
 };

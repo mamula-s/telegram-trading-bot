@@ -1,11 +1,18 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, TrendingUp, BarChart2, BookOpen, Users } from 'lucide-react';
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+
+  const navItems = [
+    { path: '/futures', icon: <TrendingUp className="w-5 h-5" />, label: "Ф'ючерси" },
+    { path: '/spot', icon: <BarChart2 className="w-5 h-5" />, label: "Спот" },
+    { path: '/education', icon: <BookOpen className="w-5 h-5" />, label: "Навчання" },
+    { path: '/referral', icon: <Users className="w-5 h-5" />, label: "Реферали" }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,30 +51,20 @@ const Layout = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around py-3">
-            <button 
-              onClick={() => navigate('/futures')}
-              className="text-sm text-gray-600 flex flex-col items-center"
-            >
-              <span>Ф'ючерси</span>
-            </button>
-            <button 
-              onClick={() => navigate('/spot')}
-              className="text-sm text-gray-600 flex flex-col items-center"
-            >
-              <span>Спот</span>
-            </button>
-            <button 
-              onClick={() => navigate('/education')}
-              className="text-sm text-gray-600 flex flex-col items-center"
-            >
-              <span>Навчання</span>
-            </button>
-            <button 
-              onClick={() => navigate('/referral')}
-              className="text-sm text-gray-600 flex flex-col items-center"
-            >
-              <span>Реферали</span>
-            </button>
+            {navItems.map((item) => (
+              <button 
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`text-sm flex flex-col items-center gap-1 ${
+                  location.pathname === item.path 
+                    ? 'text-blue-600' 
+                    : 'text-gray-600'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </nav>
