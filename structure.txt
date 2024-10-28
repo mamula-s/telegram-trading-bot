@@ -11,6 +11,7 @@
 │   └── index.js
 ├── package-lock.json
 ├── package.json
+├── postcss.config.js
 ├── seeders
 │   ├── 20241027143634-demo-signals.js
 │   └── 20241027143644-create-admin.js
@@ -86,6 +87,10 @@
 │   │   ├── js
 │   │   │   └── admin.js
 │   │   ├── styles.css
+│   │   ├── test.html
+│   │   ├── webapp.bundle.js
+│   │   ├── webapp.bundle.js.LICENSE.txt
+│   │   ├── webapp.bundle.js.map
 │   │   ├── webapp.css
 │   │   ├── webapp.html
 │   │   └── webapp.js
@@ -107,10 +112,52 @@
 │   ├── utils
 │   │   └── passwordUtils.js
 │   └── webApp
+│       ├── App.jsx
+│       ├── components
+│       │   ├── Card.jsx
+│       │   ├── EmptyState.jsx
+│       │   ├── ErrorView.jsx
+│       │   ├── Layout.jsx
+│       │   ├── Loading.jsx
+│       │   ├── Modal.jsx
+│       │   ├── SignalFilters.jsx
+│       │   ├── SignalModal.jsx
+│       │   └── modals
+│       │       ├── AirdropModal.jsx
+│       │       ├── ConfirmModal.jsx
+│       │       ├── EducationModal.jsx
+│       │       ├── ReferralModal.jsx
+│       │       ├── SignalModal.jsx
+│       │       └── SubscriptionModal.jsx
+│       ├── contexts
+│       │   ├── ApiContext.jsx
+│       │   └── NotificationContext.jsx
+│       ├── hooks
+│       │   └── useTelegram.js
+│       ├── index.jsx
+│       ├── pages
+│       │   ├── AirdropsPage.jsx
+│       │   ├── ChatsPage.jsx
+│       │   ├── EducationPage.jsx
+│       │   ├── FuturesPage.jsx
+│       │   ├── MainPage.jsx
+│       │   ├── PaymentPage.jsx
+│       │   ├── ReferralPage.jsx
+│       │   ├── SettingsPage.jsx
+│       │   └── SpotPage.jsx
+│       ├── routes
+│       │   └── index.jsx
+│       ├── services
+│       │   ├── signalsApi.js
+│       │   └── spotSignalsApi.js
+│       └── styles
+│           └── tailwind.css
 ├── structure.txt
+├── tailwind.config.js
 ├── test-db-connection.js
-└── uploads
-    ├── 1728060013053.jpeg
-    └── 1728061388360.jpeg
+├── uploads
+│   ├── 1728060013053.jpeg
+│   └── 1728061388360.jpeg
+└── webpack.config.js
 
-27 directories, 87 files
+35 directories, 126 files
