@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ApiProvider } from './contexts/ApiContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout';
 
 // Pages
@@ -16,18 +17,20 @@ import PaymentPage from './pages/PaymentPage';
 const App = () => {
   return (
     <ApiProvider>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<MainPage />} />
-          <Route path="futures" element={<FuturesPage />} />
-          <Route path="spot" element={<SpotPage />} />
-          <Route path="education" element={<EducationPage />} />
-          <Route path="referral" element={<ReferralPage />} />
-          <Route path="airdrops" element={<AirdropsPage />} />
-          <Route path="chats" element={<ChatsPage />} />
-          <Route path="payment" element={<PaymentPage />} />
-        </Route>
-      </Routes>
+      <NotificationProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<MainPage />} />
+            <Route path="futures" element={<FuturesPage />} />
+            <Route path="spot" element={<SpotPage />} />
+            <Route path="education" element={<EducationPage />} />
+            <Route path="referral" element={<ReferralPage />} />
+            <Route path="airdrops" element={<AirdropsPage />} />
+            <Route path="chats" element={<ChatsPage />} />
+            <Route path="payment" element={<PaymentPage />} />
+          </Route>
+        </Routes>
+      </NotificationProvider>
     </ApiProvider>
   );
 };
