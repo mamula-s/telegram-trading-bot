@@ -13,7 +13,8 @@
 ├── package.json
 ├── postcss.config.js
 ├── scripts
-│   └── check-structure.js
+│   ├── check-structure.js
+│   └── prepare-build.js
 ├── seeders
 │   ├── 20241027143634-demo-signals.js
 │   └── 20241027143644-create-admin.js
@@ -46,6 +47,7 @@
 │   │   └── views
 │   │       ├── dashboard.ejs
 │   │       ├── educationalMaterials.ejs
+│   │       ├── error.ejs
 │   │       ├── forgot-password.ejs
 │   │       ├── futures-signal-details.ejs
 │   │       ├── futures-signals.ejs
@@ -110,17 +112,8 @@
 │   │   ├── User.js
 │   │   └── UserActivity.js
 │   ├── public
-│   │   ├── admin.html
-│   │   ├── css
-│   │   │   └── admin.css
-│   │   ├── js
-│   │   │   └── admin.js
-│   │   ├── test.html
-│   │   ├── webapp.bundle.js.LICENSE.txt
-│   │   ├── webapp.bundle.js.map
-│   │   ├── webapp.css
-│   │   ├── webapp.html
-│   │   └── webapp.js
+│   │   ├── webapp.bundle.js
+│   │   └── webapp.bundle.js.map
 │   ├── routes
 │   │   ├── admin
 │   │   │   ├── api.js
@@ -180,6 +173,7 @@
 │   │   ├── hooks
 │   │   │   ├── useRealTimeData.js
 │   │   │   ├── useTelegram.js
+│   │   │   ├── useTelegramWebApp.js
 │   │   │   ├── useWebSocket.js
 │   │   │   └── useWebSocketSubscription.js
 │   │   ├── index.jsx
@@ -195,6 +189,8 @@
 │   │   │   ├── ReferralPage.jsx
 │   │   │   ├── SettingsPage.jsx
 │   │   │   └── SpotPage.jsx
+│   │   ├── public
+│   │   │   └── webapp.html
 │   │   ├── routes
 │   │   │   └── index.jsx
 │   │   ├── services
@@ -217,4 +213,4 @@
 ├── vite.config.js
 └── webpack.config.js
 
-46 directories, 172 files
+45 directories, 169 files
