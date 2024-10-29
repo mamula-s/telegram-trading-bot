@@ -1,26 +1,18 @@
+// src/webApp/pages/FuturesPage.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
+  Legend, ResponsiveContainer 
 } from 'recharts';
 import { 
-  TrendingUp, 
-  AlertCircle, 
-  CheckCircle, 
-  ArrowUp, 
-  ArrowDown,
-  Info
+  TrendingUp, AlertCircle, ArrowUp, ArrowDown, Info
 } from 'lucide-react';
 import SignalModal from '../components/modals/SignalModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import { useNotification } from '../contexts/NotificationContext';
 import { useApi } from '../contexts/ApiContext';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
+import useWebSocket from '../hooks/useWebSocket';
 import Card from '../components/Card';
 import Loading from '../components/Loading';
 import ErrorView from '../components/ErrorView';
@@ -28,19 +20,83 @@ import ErrorView from '../components/ErrorView';
 const FuturesPage = () => {
   const { addNotification } = useNotification();
   const { fetchApi, isLoading } = useApi();
+  const { connected } = useWebSocketContext();
+  
+  // WebSocket підключення
+  useWebSocket('/futures');
   
   // Стани
   const [stats, setStats] = useState({
     totalTrades: 0,
     successRate: 0,
     profitTotal: 0,
-    avgProfit: 0
+    avgProfit: 0,
+    activeSignals: 0,
+    volume24h: 0
   });
+
   const [signals, setSignals] = useState([]);
   const [selectedSignal, setSelectedSignal] = useState(null);
   const [showConfirmJoin, setShowConfirmJoin] = useState(false);
   const [performanceData, setPerformanceData] = useState([]);
   const [error, setError] = useState(null);
+  const [realTimeData, setRealTimeData] = useState({
+    prices: {},
+    updates: {}
+  });
+
+  // WebSocket обробники
+  useEffect(() => {
+    const handleWebSocketMessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case 'new_signal':
+          setSignals(prev => [data.signal, ...prev]);
+          addNotification('info', 'Новий ф\'ючерсний сигнал');
+          break;
+
+        case 'signal_update':
+          setSignals(prev => prev.map(signal => 
+            signal.id === data.signal.id ? {
+              ...signal,
+              ...data.signal,
+              realTimePrice: data.currentPrice,
+              realTimeProfit: data.profit
+            } : signal
+          ));
+          break;
+
+        case 'signal_close':
+          setSignals(prev => prev.filter(signal => signal.id !== data.signalId));
+          addNotification('info', 'Сигнал закрито');
+          break;
+
+        case 'stats_update':
+          setStats(prev => ({
+            ...prev,
+            ...data.stats
+          }));
+          break;
+
+        case 'price_update':
+          setRealTimeData(prev => ({
+            ...prev,
+            prices: {
+              ...prev.prices,
+              [data.pair]: data.price
+            }
+          }));
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('ws_message', handleWebSocketMessage);
+    return () => window.removeEventListener('ws_message', handleWebSocketMessage);
+  }, [addNotification]);
 
   // Завантаження даних
   useEffect(() => {
@@ -56,7 +112,11 @@ const FuturesPage = () => {
       ]);
       
       setStats(statsData);
-      setSignals(signalsData.signals);
+      setSignals(signalsData.signals.map(signal => ({
+        ...signal,
+        realTimePrice: signal.currentPrice,
+        realTimeProfit: signal.profit
+      })));
       setPerformanceData(signalsData.performance);
     } catch (err) {
       setError('Помилка завантаження даних');
@@ -66,18 +126,36 @@ const FuturesPage = () => {
 
   // Обробники подій
   const handleSignalClick = (signal) => {
-    setSelectedSignal(signal);
+    setSelectedSignal({
+      ...signal,
+      currentPrice: realTimeData.prices[signal.pair] || signal.currentPrice
+    });
   };
 
   const handleJoinSignal = async (signalId) => {
     try {
-      await fetchApi(`futures/signals/${signalId}/join`, { method: 'POST' });
-      addNotification('success', 'Ви успішно приєднались до сигналу');
-      setSelectedSignal(null);
-      await loadData();
+      const response = await fetchApi(`futures/signals/${signalId}/join`, { 
+        method: 'POST' 
+      });
+      
+      if (response.success) {
+        addNotification('success', 'Ви успішно приєднались до сигналу');
+        setSelectedSignal(null);
+        await loadData();
+      } else {
+        throw new Error(response.error);
+      }
     } catch (error) {
-      addNotification('error', 'Помилка при приєднанні до сигналу');
+      addNotification('error', error.message || 'Помилка при приєднанні до сигналу');
     }
+  };
+
+  // Форматування даних
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8
+    }).format(price);
   };
 
   if (error) {
@@ -91,6 +169,13 @@ const FuturesPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Connection Status */}
+      <div className={`fixed top-4 right-4 px-3 py-1 rounded-full text-sm ${
+        connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+      }`}>
+        {connected ? 'Онлайн' : 'Офлайн'}
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
@@ -105,7 +190,7 @@ const FuturesPage = () => {
         </Card>
         <Card>
           <div className="text-gray-500 text-sm">Загальний прибуток</div>
-          <div className="text-2xl font-bold">${stats.profitTotal}</div>
+          <div className="text-2xl font-bold">${formatPrice(stats.profitTotal)}</div>
         </Card>
         <Card>
           <div className="text-gray-500 text-sm">Середній прибуток</div>
@@ -206,24 +291,29 @@ const FuturesPage = () => {
                     <span className="text-sm text-gray-500">• {signal.leverage}</span>
                   </div>
                   <div className="mt-2 text-sm text-gray-600">
-                    Вхід: ${signal.entryPrice.toLocaleString()}
+                    Вхід: ${formatPrice(signal.entryPrice)}
+                    {signal.realTimePrice && signal.realTimePrice !== signal.entryPrice && (
+                      <span className="ml-2 text-gray-400">
+                        Поточна: ${formatPrice(signal.realTimePrice)}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-sm">
                     <span className="text-gray-600">
-                      TP: ${signal.takeProfit.toLocaleString()}
+                      TP: ${formatPrice(signal.takeProfit)}
                     </span>
                     <span className="mx-2">•</span>
                     <span className="text-gray-600">
-                      SL: ${signal.stopLoss.toLocaleString()}
+                      SL: ${formatPrice(signal.stopLoss)}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
-                  {signal.currentPrice && (
+                  {signal.realTimePrice && (
                     <div className={`text-lg font-bold ${
-                      signal.profit >= 0 ? 'text-green-500' : 'text-red-500'
+                      signal.realTimeProfit >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {signal.profit > 0 ? '+' : ''}{signal.profit}%
+                      {signal.realTimeProfit > 0 ? '+' : ''}{signal.realTimeProfit}%
                     </div>
                   )}
                   <div className="text-sm text-gray-500 mt-1">
@@ -243,6 +333,7 @@ const FuturesPage = () => {
         signal={selectedSignal}
         onJoin={(signalId) => setShowConfirmJoin(true)}
         type="futures"
+        realTimeData={realTimeData}
       />
 
       <ConfirmModal

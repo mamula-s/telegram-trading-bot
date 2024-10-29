@@ -1,20 +1,33 @@
+// src/webApp/pages/SpotPage.jsx
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, AlertCircle, CheckCircle, ArrowUp, ArrowDown, Info, Wallet } from 'lucide-react';
+import { TrendingUp, AlertCircle, ArrowUp, ArrowDown, Info, Wallet } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useApi } from '../contexts/ApiContext';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
+import useWebSocket from '../hooks/useWebSocket';
 import SignalModal from '../components/SignalModal';
 import SignalFilters from '../components/SignalFilters';
+import Card from '../components/Card';
+import Loading from '../components/Loading';
 
 const SpotPage = () => {
   const { addNotification } = useNotification();
+  const { fetchApi } = useApi();
+  const { connected } = useWebSocketContext();
   const [isLoading, setIsLoading] = useState(true);
+
+  // WebSocket підключення
+  useWebSocket('/spot');
+
   const [stats, setStats] = useState({
     totalTrades: 0,
     successRate: 0,
     totalVolume: 0,
     avgHoldingTime: '0',
     unrealizedProfit: 0,
-    realizedProfit: 0
+    realizedProfit: 0,
+    volume24h: 0
   });
 
   const [signals, setSignals] = useState([]);
@@ -29,12 +42,69 @@ const SpotPage = () => {
     limit: 10,
     minVolume: '',
     maxVolume: '',
-    holdingPeriod: 'all' // all, short, medium, long
+    holdingPeriod: 'all'
   });
 
   const [performanceData, setPerformanceData] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [holdings, setHoldings] = useState([]);
+  const [realTimeData, setRealTimeData] = useState({
+    prices: {},
+    holdings: {}
+  });
+
+  // WebSocket обробники
+  useEffect(() => {
+    const handleWebSocketMessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case 'new_signal':
+          setSignals(prev => [data.signal, ...prev]);
+          addNotification('info', 'Новий спотовий сигнал');
+          break;
+
+        case 'holdings_update':
+          setHoldings(prev => prev.map(holding => {
+            const update = data.holdings[holding.pair];
+            if (update) {
+              return {
+                ...holding,
+                currentPrice: update.price,
+                currentValue: holding.amount * update.price,
+                profit: update.profit
+              };
+            }
+            return holding;
+          }));
+          break;
+
+        case 'portfolio_update':
+          setStats(prev => ({
+            ...prev,
+            totalVolume: data.totalVolume,
+            unrealizedProfit: data.unrealizedProfit
+          }));
+          break;
+
+        case 'price_update':
+          setRealTimeData(prev => ({
+            ...prev,
+            prices: {
+              ...prev.prices,
+              [data.pair]: data.price
+            }
+          }));
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('ws_message', handleWebSocketMessage);
+    return () => window.removeEventListener('ws_message', handleWebSocketMessage);
+  }, [addNotification]);
 
   useEffect(() => {
     loadData(true);
@@ -46,16 +116,22 @@ const SpotPage = () => {
       const page = reset ? 1 : filters.page;
 
       const [statsData, signalsData, holdingsData] = await Promise.all([
-        fetch('/api/spot/stats').then(res => res.json()),
-        fetch(`/api/spot/signals?${new URLSearchParams({
+        fetchApi('spot/stats'),
+        fetchApi(`spot/signals?${new URLSearchParams({
           ...filters,
           page
-        })}`).then(res => res.json()),
-        fetch('/api/spot/holdings').then(res => res.json())
+        })}`),
+        fetchApi('spot/holdings')
       ]);
 
       setStats(statsData);
-      setSignals(prev => reset ? signalsData.signals : [...prev, ...signalsData.signals]);
+      setSignals(prev => {
+        const newSignals = signalsData.signals.map(signal => ({
+          ...signal,
+          realTimePrice: realTimeData.prices[signal.pair] || signal.price,
+        }));
+        return reset ? newSignals : [...prev, ...newSignals];
+      });
       setPerformanceData(signalsData.performance || []);
       setHoldings(holdingsData);
       setHasMore(signalsData.hasMore);
@@ -79,20 +155,40 @@ const SpotPage = () => {
 
   const handleJoinSignal = async (signalId) => {
     try {
-      await fetch(`/api/spot/signals/${signalId}/join`, {
+      const response = await fetchApi(`spot/signals/${signalId}/join`, {
         method: 'POST'
       });
-      addNotification('success', 'Ви успішно приєдналися до сигналу');
-      await loadData(true);
-      setSelectedSignal(null);
+
+      if (response.success) {
+        addNotification('success', 'Ви успішно приєдналися до сигналу');
+        await loadData(true);
+        setSelectedSignal(null);
+      } else {
+        throw new Error(response.error);
+      }
     } catch (error) {
       console.error('Error joining signal:', error);
-      addNotification('error', 'Помилка при приєднанні до сигналу');
+      addNotification('error', error.message || 'Помилка при приєднанні до сигналу');
     }
+  };
+
+  // Форматування даних
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8
+    }).format(price);
   };
 
   return (
     <div className="space-y-6 pb-6">
+      {/* Connection Status */}
+      <div className={`fixed top-4 right-4 px-3 py-1 rounded-full text-sm ${
+        connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+      }`}>
+        {connected ? 'Онлайн' : 'Офлайн'}
+      </div>
+
       {/* Portfolio Stats */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-4 text-white">
         <div className="flex items-center gap-2 mb-3">
@@ -102,7 +198,9 @@ const SpotPage = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-sm opacity-75">Загальний баланс</div>
-            <div className="text-2xl font-bold">${stats.totalVolume.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${formatPrice(stats.totalVolume)}
+            </div>
           </div>
           <div>
             <div className="text-sm opacity-75">Нереалізований прибуток</div>
@@ -117,22 +215,22 @@ const SpotPage = () => {
 
       {/* Trading Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
+        <Card>
           <div className="text-gray-500 text-sm">Всього угод</div>
           <div className="text-2xl font-bold">{stats.totalTrades}</div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
+        </Card>
+        <Card>
           <div className="text-gray-500 text-sm">Успішність</div>
           <div className="text-2xl font-bold text-green-500">{stats.successRate}%</div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
+        </Card>
+        <Card>
           <div className="text-gray-500 text-sm">Середній час утримання</div>
           <div className="text-2xl font-bold">{stats.avgHoldingTime}</div>
-        </div>
+        </Card>
       </div>
 
       {/* Holdings */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm">
+      <Card>
         <h2 className="text-lg font-bold mb-4">Поточні позиції</h2>
         <div className="space-y-3">
           {holdings.map(holding => (
@@ -140,7 +238,7 @@ const SpotPage = () => {
               <div>
                 <div className="font-medium">{holding.pair}</div>
                 <div className="text-sm text-gray-500">
-                  Кількість: {holding.amount} • Середня ціна: ${holding.avgPrice}
+                  Кількість: {holding.amount} • Середня ціна: ${formatPrice(holding.avgPrice)}
                 </div>
               </div>
               <div className="text-right">
@@ -150,7 +248,7 @@ const SpotPage = () => {
                   {holding.profit > 0 ? '+' : ''}{holding.profit}%
                 </div>
                 <div className="text-sm text-gray-500">
-                  ${holding.currentValue.toLocaleString()}
+                  ${formatPrice(holding.currentValue)}
                 </div>
               </div>
             </div>
@@ -161,7 +259,7 @@ const SpotPage = () => {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Performance Chart */}
       <div className="bg-white rounded-2xl p-4 shadow-sm">
@@ -286,10 +384,13 @@ const SpotPage = () => {
               {signals.map(signal => (
                 <div
                   key={signal.id}
-                  onClick={() => setSelectedSignal(signal)}
+                  onClick={() => setSelectedSignal({
+                    ...signal,
+                    currentPrice: realTimeData.prices[signal.pair] || signal.price
+                  })}
                   className="bg-white rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
-                  <div>
+                    <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{signal.pair}</span>
                         <span className={`
@@ -307,14 +408,19 @@ const SpotPage = () => {
                         </span>
                       </div>
                       <div className="mt-2 text-sm text-gray-600">
-                        Ціна: ${signal.price.toLocaleString()}
+                        Ціна: ${formatPrice(signal.price)}
+                        {signal.realTimePrice && signal.realTimePrice !== signal.price && (
+                          <span className="ml-2 text-gray-400">
+                            Поточна: ${formatPrice(signal.realTimePrice)}
+                          </span>
+                        )}
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
-                        Рекомендований об'єм: ${signal.recommendedVolume.toLocaleString()}
+                        Рекомендований об'єм: ${formatPrice(signal.recommendedVolume)}
                       </div>
                     </div>
                     <div className="text-right">
-                      {signal.status === 'ACTIVE' && signal.currentPrice && (
+                      {signal.status === 'ACTIVE' && signal.realTimePrice && (
                         <div className={`text-lg font-bold ${
                           signal.profit >= 0 ? 'text-green-500' : 'text-red-500'
                         }`}>
@@ -352,6 +458,7 @@ const SpotPage = () => {
           onClose={() => setSelectedSignal(null)}
           onJoin={handleJoinSignal}
           type="spot"
+          realTimeData={realTimeData}
         />
       )}
     </div>

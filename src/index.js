@@ -17,6 +17,9 @@ const expressLayouts = require('express-ejs-layouts');
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./admin/routes');
 
+const adminApiRoutes = require('./routes/admin/api');
+
+
 const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
 const port = process.env.PORT || 3000;
@@ -38,6 +41,8 @@ app.set("layout extractStyles", true);
 app.set("layout extractScripts", true);
 
 // API та адмін маршрути
+// Admin API routes
+app.use('/api/admin', adminApiRoutes);
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 

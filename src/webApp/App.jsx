@@ -3,6 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import { ApiProvider } from './contexts/ApiContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout';
+// src/webApp/App.jsx
+import { BrowserRouter } from 'react-router-dom';
+import { WebSocketProvider } from './contexts/WebSocketContext';
+import Routes from './routes';
 
 // Pages
 import MainPage from './pages/MainPage';
@@ -14,11 +18,15 @@ import AirdropsPage from './pages/AirdropsPage';
 import ChatsPage from './pages/ChatsPage';
 import PaymentPage from './pages/PaymentPage';
 
+
+
 const App = () => {
   return (
-    <ApiProvider>
+    <BrowserRouter>
       <NotificationProvider>
-        <Routes>
+        <WebSocketProvider>
+          <ApiProvider>
+          <Routes>
           <Route element={<Layout />}>
             <Route index element={<MainPage />} />
             <Route path="futures" element={<FuturesPage />} />
@@ -30,8 +38,10 @@ const App = () => {
             <Route path="payment" element={<PaymentPage />} />
           </Route>
         </Routes>
+          </ApiProvider>
+        </WebSocketProvider>
       </NotificationProvider>
-    </ApiProvider>
+    </BrowserRouter>
   );
 };
 
