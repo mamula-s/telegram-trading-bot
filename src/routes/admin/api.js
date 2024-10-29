@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const paths = require('../../config/paths');
-const { adminAuth, checkRole } = require(path.join(paths.middleware, 'adminAuth'));
-
+const { adminAuth, checkRole } = require('../../middleware/adminAuth');
 const UserController = require('../../controllers/admin/UserController');
 const SignalController = require('../../controllers/admin/SignalController');
 const SubscriptionController = require('../../controllers/admin/SubscriptionController');
