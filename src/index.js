@@ -47,32 +47,40 @@ app.use(helmet({
         "'unsafe-eval'",
         "https://cdnjs.cloudflare.com",
         "https://telegram.org",
-        "https://core.telegram.org"
+        "https://*.telegram.org"
       ],
       connectSrc: [
         "'self'",
         "wss://*.telegram.org",
+        "https://*.telegram.org",
+        "https://telegram.org"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://telegram.org",
+        "https://cdnjs.cloudflare.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "data:",
+        "https://cdnjs.cloudflare.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://telegram.org",
         "https://*.telegram.org"
       ],
       frameSrc: [
         "'self'",
         "https://telegram.org"
       ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "https://telegram.org",
-        "https://*.telegram.org"
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://telegram.org"
-      ],
-      workerSrc: ["'self'", "blob:"],
-      childSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: []
+      mediaSrc: ["'self'"],
+      workerSrc: ["'self'", "blob:"],
+      childSrc: ["'self'", "blob:"]
     }
   }
 }));
@@ -91,7 +99,15 @@ app.use(cors({
 }));
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    }
+  }
+}));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // View engine setup
@@ -118,11 +134,21 @@ app.get('/', (req, res) => {
 });
 
 // WebApp routes
-app.get('/webapp', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
-});
-
-app.get('/webapp/*', (req, res) => {
+app.get(['/webapp', '/webapp/*'], (req, res) => {
+  res.set({
+    'Content-Security-Policy': "default-src 'self' https://telegram.org https://*.telegram.org; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://telegram.org https://*.telegram.org; " +
+      "style-src 'self' 'unsafe-inline' https://telegram.org https://cdnjs.cloudflare.com; " +
+      "img-src 'self' data: blob: https://telegram.org https://*.telegram.org; " +
+      "font-src 'self' data: https://cdnjs.cloudflare.com; " +
+      "connect-src 'self' wss://*.telegram.org https://*.telegram.org https://telegram.org; " +
+      "frame-src 'self' https://telegram.org; " +
+      "object-src 'none'; " +
+      "media-src 'self'; " +
+      "worker-src 'self' blob:; " +
+      "child-src 'self' blob:;",
+    'X-Content-Type-Options': 'nosniff'
+  });
   res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
 });
 
@@ -174,7 +200,13 @@ require('./bot/commands')(bot, userService, signalService, subscriptions);
 
 // Error handling
 app.use((req, res, next) => {
-  res.status(404);
+  if (req.url.endsWith('.js')) {
+    res.type('application/javascript');
+  } else if (req.url.endsWith('.css')) {
+    res.type('text/css');
+  }
+  next();
+});
   
   if (req.accepts('html')) {
     if (req.path.startsWith('/admin')) {
