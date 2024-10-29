@@ -214,18 +214,42 @@ app.use((req, res) => {
       res.status(404).render('error', {
         layout: false,
         error: { status: 404 },
-        message: 'Page not found'
+        message: 'Сторінку не знайдено'
+      });
+    } else if (req.path.startsWith('/webapp')) {
+      res.sendFile(path.join(__dirname, 'public', 'webapp.html'), (err) => {
+        if (err) {
+          console.error('Error sending webapp.html:', err);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
       });
     } else {
-      res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
+      res.status(404).json({ error: 'Not Found' });
     }
   } else {
-    res.status(404).json({ error: 'Not found' });
+    res.status(404).json({ error: 'Not Found' });
   }
 });
 
 // Error handler
-app.use(globalErrorHandler);
+app.use((err, req, res, next) => {
+  console.error('ERROR 💥', err);
+
+  if (req.path.startsWith('/admin')) {
+    res.status(err.status || 500).render('error', {
+      layout: false,
+      error: { status: err.status || 500 },
+      message: err.message || 'Something went wrong!'
+    });
+  } else if (req.accepts('json')) {
+    res.status(err.status || 500).json({
+      status: 'error',
+      message: err.message
+    });
+  } else {
+    res.status(err.status || 500).send(err.message);
+  }
+});
 
 // Cron jobs
 const subscriptionCheckJob = new CronJob('0 12 * * *', () => {
