@@ -1,4 +1,3 @@
-// src/services/userService.js
 const { Op } = require('sequelize');
 const User = require('../models/User');
 const UserActivity = require('../models/UserActivity');
@@ -6,12 +5,17 @@ const { privilegedUserIds, developerId } = require('../config/privileges');
 const subscriptions = require('../config/subscriptions');
 
 class UserService {
-    // Існуючі методи
     async createUser(userData) {
         try {
             const [user, created] = await User.findOrCreate({
                 where: { telegramId: userData.telegramId },
-                defaults: userData
+                defaults: {
+                    ...userData,
+                    isSubscribed: false,
+                    subscriptionType: 'FREE',
+                    subscriptions: [],
+                    isBlocked: false
+                }
             });
             console.log(`Користувач ${created ? 'створений' : 'оновлений'}:`, user.toJSON());
             return user;
@@ -23,7 +27,15 @@ class UserService {
 
     async getUserByTelegramId(telegramId) {
         try {
-            const user = await User.findOne({ where: { telegramId } });
+            const user = await User.findOne({ 
+                where: { telegramId },
+                include: [{
+                    model: UserActivity,
+                    as: 'activities',
+                    limit: 1,
+                    order: [['createdAt', 'DESC']]
+                }]
+            });
             console.log(`Отримано користувача:`, user ? user.toJSON() : null);
             return user;
         } catch (error) {
@@ -42,6 +54,13 @@ class UserService {
                 console.log(`Користувача з ID ${telegramId} не знайдено для оновлення`);
                 return null;
             }
+
+            // Створюємо запис про оновлення
+            if (updatedUsers[0].id) {
+                await this.createUserActivity(updatedUsers[0].id, 'PROFILE_UPDATE', 
+                    'Оновлено профіль користувача');
+            }
+
             console.log(`Оновлено користувача:`, updatedUsers[0].toJSON());
             return updatedUsers[0];
         } catch (error) {
@@ -52,7 +71,14 @@ class UserService {
 
     async getAllUsers() {
         try {
-            const users = await User.findAll();
+            const users = await User.findAll({
+                include: [{
+                    model: UserActivity,
+                    as: 'activities',
+                    limit: 1,
+                    order: [['createdAt', 'DESC']]
+                }]
+            });
             console.log(`Отримано всіх користувачів. Кількість:`, users.length);
             return users;
         } catch (error) {
@@ -61,7 +87,6 @@ class UserService {
         }
     }
 
-    // Нові методи для адмін-панелі
     async getUsers(page = 1, limit = 10, search = '') {
         try {
             const offset = (page - 1) * limit;
@@ -70,8 +95,9 @@ class UserService {
             if (search) {
                 whereClause = {
                     [Op.or]: [
-                        { username: { [Op.like]: `%${search}%` } },
-                        { email: { [Op.like]: `%${search}%` } },
+                        { username: { [Op.iLike]: `%${search}%` } },
+                        { firstName: { [Op.iLike]: `%${search}%` } },
+                        { lastName: { [Op.iLike]: `%${search}%` } },
                         { telegramId: { [Op.like]: `%${search}%` } }
                     ]
                 };
@@ -82,10 +108,22 @@ class UserService {
                 limit,
                 offset,
                 order: [['createdAt', 'DESC']],
-                include: ['subscription']
+                include: [{
+                    model: UserActivity,
+                    as: 'activities',
+                    limit: 1,
+                    order: [['createdAt', 'DESC']]
+                }],
+                distinct: true
             });
 
-            return { users, total };
+            return { 
+                users: users.map(user => ({
+                    ...user.toJSON(),
+                    lastActivity: user.activities && user.activities[0] ? user.activities[0] : null
+                })), 
+                total 
+            };
         } catch (error) {
             console.error('Помилка отримання користувачів:', error);
             throw error;
@@ -95,15 +133,12 @@ class UserService {
     async getUserById(id) {
         try {
             const user = await User.findByPk(id, {
-                include: [
-                    'subscription',
-                    {
-                        model: UserActivity,
-                        as: 'activities',
-                        limit: 10,
-                        order: [['createdAt', 'DESC']]
-                    }
-                ]
+                include: [{
+                    model: UserActivity,
+                    as: 'activities',
+                    limit: 10,
+                    order: [['createdAt', 'DESC']]
+                }]
             });
 
             if (!user) {
@@ -123,7 +158,15 @@ class UserService {
             if (subscriptionType) {
                 query.subscriptionType = subscriptionType;
             }
-            const users = await User.findAll({ where: query });
+            const users = await User.findAll({
+                where: query,
+                include: [{
+                    model: UserActivity,
+                    as: 'activities',
+                    limit: 1,
+                    order: [['createdAt', 'DESC']]
+                }]
+            });
             console.log(`Отримано підписаних користувачів. Кількість:`, users.length);
             return users;
         } catch (error) {
@@ -153,6 +196,10 @@ class UserService {
                     subscriptionType: 'FULL',
                     subscriptionEndDate: oneYearFromNow
                 });
+
+                await this.createUserActivity(user.id, 'SUBSCRIPTION_UPDATE', 
+                    'Оновлено до FULL підписки (привілейований користувач)');
+
                 console.log(`Оновлено підписку для користувача ${telegramId} до FULL`);
             } else if (subscriptionType && months) {
                 const endDate = new Date();
@@ -168,9 +215,7 @@ class UserService {
                     `Оновлено підписку на ${subscriptionType} на ${months} місяців`);
             }
 
-            const updatedUser = await User.findOne({ where: { telegramId } });
-            console.log('Оновлений користувач:', updatedUser.toJSON());
-            return updatedUser;
+            return await this.getUserByTelegramId(telegramId);
         } catch (error) {
             console.error('Помилка оновлення підписки:', error);
             throw error;
@@ -185,7 +230,7 @@ class UserService {
             await this.createUserActivity(userId, 'ACCESS_TOGGLE',
                 blocked ? 'Користувача заблоковано' : 'Користувача розблоковано');
 
-            return user;
+            return await this.getUserById(userId);
         } catch (error) {
             console.error('Помилка зміни статусу блокування:', error);
             throw error;
@@ -194,14 +239,19 @@ class UserService {
 
     async checkAndUpdateSubscription(user) {
         try {
-            if (user.subscriptionEndDate && user.subscriptionEndDate < new Date()) {
+            if (user.subscriptionEndDate && new Date(user.subscriptionEndDate) < new Date()) {
                 console.log(`Підписка користувача ${user.telegramId} закінчилась`);
                 await user.update({
                     isSubscribed: false,
-                    subscriptionType: 'free',
+                    subscriptionType: 'FREE',
                     subscriptionEndDate: null
                 });
+
+                await this.createUserActivity(user.id, 'SUBSCRIPTION_EXPIRED', 
+                    'Термін дії підписки закінчився');
+
                 console.log(`Скинуто підписку для користувача ${user.telegramId}`);
+                return await this.getUserByTelegramId(user.telegramId);
             }
             return user;
         } catch (error) {
@@ -212,8 +262,14 @@ class UserService {
 
     async checkAccess(telegramId, requiredSubscription) {
         try {
-            const activeSubscriptions = await this.getActiveSubscriptions(telegramId);
-            const hasAccess = activeSubscriptions.includes(requiredSubscription) || activeSubscriptions.includes('FULL');
+            const user = await this.getUserByTelegramId(telegramId);
+            if (!user || user.isBlocked) return false;
+
+            if (!user.isSubscribed) return false;
+
+            const hasAccess = user.subscriptionType === 'FULL' || 
+                user.subscriptionType === requiredSubscription;
+
             console.log(`Перевірка доступу для користувача ${telegramId} до ${requiredSubscription}: ${hasAccess}`);
             return hasAccess;
         } catch (error) {

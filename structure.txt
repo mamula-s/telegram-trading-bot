@@ -97,6 +97,7 @@
 │   ├── index.js
 │   ├── middleware
 │   │   ├── adminAuth.js
+│   │   ├── errorHandler.js
 │   │   └── telegramAuth.js
 │   ├── models
 │   │   ├── Admin.js
@@ -150,61 +151,62 @@
 │   ├── utils
 │   │   ├── messageFormatter.js
 │   │   └── passwordUtils.js
-│   └── webApp
-│       ├── App.jsx
-│       ├── components
-│       │   ├── Card.jsx
-│       │   ├── EmptyState.jsx
-│       │   ├── ErrorView.jsx
-│       │   ├── Layout.jsx
-│       │   ├── Loading.jsx
-│       │   ├── Modal.jsx
-│       │   ├── SignalFilters.jsx
-│       │   ├── SignalModal.jsx
-│       │   ├── charts
-│       │   │   ├── StatisticsGrid.jsx
-│       │   │   ├── TradingCharts.jsx
-│       │   │   └── index.js
-│       │   └── modals
-│       │       ├── AirdropModal.jsx
-│       │       ├── ConfirmModal.jsx
-│       │       ├── EducationModal.jsx
-│       │       ├── ReferralModal.jsx
-│       │       ├── SignalModal.jsx
-│       │       └── SubscriptionModal.jsx
-│       ├── contexts
-│       │   ├── ApiContext.jsx
-│       │   ├── NotificationContext.jsx
-│       │   └── WebSocketContext.jsx
-│       ├── hooks
-│       │   ├── useRealTimeData.js
-│       │   ├── useTelegram.js
-│       │   ├── useWebSocket.js
-│       │   └── useWebSocketSubscription.js
-│       ├── index.jsx
-│       ├── pages
-│       │   ├── AirdropsPage.jsx
-│       │   ├── ChatsPage.jsx
-│       │   ├── EducationPage.jsx
-│       │   ├── FuturesPage.jsx
-│       │   ├── MainPage.jsx
-│       │   ├── NotificationsPage.jsx
-│       │   ├── PaymentPage.jsx
-│       │   ├── ProfilePage.jsx
-│       │   ├── ReferralPage.jsx
-│       │   ├── SettingsPage.jsx
-│       │   └── SpotPage.jsx
-│       ├── routes
-│       │   └── index.jsx
-│       ├── services
-│       │   ├── chatsApi.js
-│       │   ├── signalsApi.js
-│       │   ├── spotSignalsApi.js
-│       │   └── websocket.js
-│       ├── styles
-│       │   └── tailwind.css
-│       └── utils
-│           └── websocketUtils.js
+│   ├── webApp
+│   │   ├── App.jsx
+│   │   ├── components
+│   │   │   ├── Card.jsx
+│   │   │   ├── EmptyState.jsx
+│   │   │   ├── ErrorView.jsx
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Loading.jsx
+│   │   │   ├── Modal.jsx
+│   │   │   ├── SignalFilters.jsx
+│   │   │   ├── SignalModal.jsx
+│   │   │   ├── charts
+│   │   │   │   ├── StatisticsGrid.jsx
+│   │   │   │   ├── TradingCharts.jsx
+│   │   │   │   └── index.js
+│   │   │   └── modals
+│   │   │       ├── AirdropModal.jsx
+│   │   │       ├── ConfirmModal.jsx
+│   │   │       ├── EducationModal.jsx
+│   │   │       ├── ReferralModal.jsx
+│   │   │       ├── SignalModal.jsx
+│   │   │       └── SubscriptionModal.jsx
+│   │   ├── contexts
+│   │   │   ├── ApiContext.jsx
+│   │   │   ├── NotificationContext.jsx
+│   │   │   └── WebSocketContext.jsx
+│   │   ├── hooks
+│   │   │   ├── useRealTimeData.js
+│   │   │   ├── useTelegram.js
+│   │   │   ├── useWebSocket.js
+│   │   │   └── useWebSocketSubscription.js
+│   │   ├── index.jsx
+│   │   ├── pages
+│   │   │   ├── AirdropsPage.jsx
+│   │   │   ├── ChatsPage.jsx
+│   │   │   ├── EducationPage.jsx
+│   │   │   ├── FuturesPage.jsx
+│   │   │   ├── MainPage.jsx
+│   │   │   ├── NotificationsPage.jsx
+│   │   │   ├── PaymentPage.jsx
+│   │   │   ├── ProfilePage.jsx
+│   │   │   ├── ReferralPage.jsx
+│   │   │   ├── SettingsPage.jsx
+│   │   │   └── SpotPage.jsx
+│   │   ├── routes
+│   │   │   └── index.jsx
+│   │   ├── services
+│   │   │   ├── chatsApi.js
+│   │   │   ├── signalsApi.js
+│   │   │   ├── spotSignalsApi.js
+│   │   │   └── websocket.js
+│   │   ├── styles
+│   │   │   └── tailwind.css
+│   │   └── utils
+│   │       └── websocketUtils.js
+│   └── webSocket.js
 ├── structure.txt
 ├── tailwind.config.js
 ├── test-db-connection.js
@@ -215,4 +217,4 @@
 ├── vite.config.js
 └── webpack.config.js
 
-46 directories, 170 files
+46 directories, 172 files
