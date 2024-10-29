@@ -8,14 +8,14 @@
     <title>Trading Bot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="/styles.css" rel="stylesheet">
-    <base href="/webapp/" />
 </head>
-<body>
+<body class="bg-gray-50">
     <div id="root"></div>
     <script>
         window.addEventListener('load', () => {
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
             }
         });
     </script>

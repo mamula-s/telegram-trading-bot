@@ -5,3 +5,8 @@ node_modules/
 npm-debug.log
 *.log
 .vscode/
+/dist
+/src/public/*
+!/src/public/webapp.html
+/src/admin/views/*
+!/src/admin/views/error.ejs

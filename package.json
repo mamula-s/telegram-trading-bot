@@ -84,6 +84,6 @@
     "seed": "sequelize-cli db:seed:all",
     "seed:undo": "sequelize-cli db:seed:undo:all",
     "prepare-build": "node scripts/prepare-build.js",
-    "heroku-postbuild": "npm run prepare-build && npm run migrate && npm run build"
+    "heroku-postbuild": "npm run migrate && npm run build"
   }
 }
