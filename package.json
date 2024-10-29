@@ -83,6 +83,8 @@
     "migrate:reset": "sequelize-cli db:migrate:undo:all && sequelize-cli db:migrate",
     "seed": "sequelize-cli db:seed:all",
     "seed:undo": "sequelize-cli db:seed:undo:all",
-    "heroku-postbuild": "npm run migrate && npm run build"
+     "heroku-postbuild": "mkdir -p src/public src/admin/views && npm run migrate && npm run build && npm run copy-public",
+    "copy-public": "cp -r public/* src/public/",
+    "prepare-build": "node scripts/prepare-build.js"
   }
 }
