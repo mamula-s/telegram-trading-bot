@@ -41,12 +41,38 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "wss:", "https:"],
-      frameSrc: ["'self'", "https://t.me"],
-      upgradeInsecureRequests: null
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://cdnjs.cloudflare.com",
+        "https://telegram.org",
+        "https://core.telegram.org"
+      ],
+      connectSrc: [
+        "'self'",
+        "wss://*.telegram.org",
+        "https://*.telegram.org"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://telegram.org"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://telegram.org",
+        "https://*.telegram.org"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://telegram.org"
+      ],
+      workerSrc: ["'self'", "blob:"],
+      childSrc: ["'self'", "blob:"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
     }
   }
 }));
