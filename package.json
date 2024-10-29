@@ -68,6 +68,7 @@
     "webpack-cli": "5.1.4"
   },
   "scripts": {
+    "prestart": "node scripts/check-structure.js",
     "start": "node src/index.js",
     "dev": "concurrently \"npm run watch:css\" \"npm run watch:webpack\" \"nodemon src/index.js\"",
     "build": "NODE_ENV=production npm run build:css && NODE_ENV=production npm run build:webpack",
