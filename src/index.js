@@ -1,4 +1,3 @@
-// src/index.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -98,12 +97,22 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Telegram-Init-Data']
 }));
 
+// Content Type Middleware
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js')) {
+    res.type('application/javascript');
+  } else if (req.path.endsWith('.css')) {
+    res.type('text/css');
+  }
+  next();
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.js')) {
+  setHeaders: (res, filepath) => {
+    if (filepath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
-    } else if (path.endsWith('.css')) {
+    } else if (filepath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
     }
   }
@@ -198,19 +207,11 @@ app.get('/webhook-info', async (req, res) => {
 // Load bot commands
 require('./bot/commands')(bot, userService, signalService, subscriptions);
 
-// Error handling
-app.use((req, res, next) => {
-  if (req.url.endsWith('.js')) {
-    res.type('application/javascript');
-  } else if (req.url.endsWith('.css')) {
-    res.type('text/css');
-  }
-  next();
-});
-  
+// 404 Handler
+app.use((req, res) => {
   if (req.accepts('html')) {
     if (req.path.startsWith('/admin')) {
-      res.render('error', {
+      res.status(404).render('error', {
         layout: false,
         error: { status: 404 },
         message: 'Page not found'
@@ -219,10 +220,11 @@ app.use((req, res, next) => {
       res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
     }
   } else {
-    res.json({ error: 'Not found' });
+    res.status(404).json({ error: 'Not found' });
   }
 });
 
+// Error handler
 app.use(globalErrorHandler);
 
 // Cron jobs
