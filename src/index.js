@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
 const { CronJob } = require('cron');
+const cors = require('cors');
 require('dotenv').config();
 
 const { sequelize, connectDB } = require('./database/sequelize');
@@ -12,11 +13,9 @@ const userService = require('./services/userService');
 const signalService = require('./services/signalService');
 const botService = require('./services/botService');
 const subscriptionService = require('./services/subscriptionService');
-
 const expressLayouts = require('express-ejs-layouts');
 const apiRoutes = require('./routes/api');
-const adminRoutes = require('./routes/adminRoutes');
-
+const adminRoutes = require('./admin/routes');
 
 const bot = new TelegramBot(process.env.BOT_TOKEN);
 const app = express();
@@ -26,8 +25,7 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use('/api', apiRoutes);
-app.use('/admin', adminRoutes);
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
@@ -39,8 +37,8 @@ app.set('layout', 'layout');  // використовуємо layout.ejs як б
 app.set("layout extractStyles", true);
 app.set("layout extractScripts", true);
 
-// Налаштування адмін-панелі
-const adminRoutes = require('./admin/routes');
+// API та адмін маршрути
+app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 
 // Основні маршрути
@@ -68,7 +66,7 @@ const setWebhookWithRetry = async (retryCount = 0) => {
   }
 };
 
-// API маршрути
+// WebApp маршрути
 app.get('/webapp', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
 });
@@ -77,11 +75,7 @@ app.get('/webapp*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
 });
 
-// Обробка 404 для веб-додатку
-app.use('/webapp/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
-});
-
+// API маршрути
 app.get('/api/portfolio', async (req, res) => {
   res.json([
     { asset: 'BTC', amount: 0.5, value: 15000 },
@@ -117,8 +111,7 @@ app.get('/webhook-info', async (req, res) => {
   }
 });
 
-
-// Маршрут для API
+// API для користувацьких даних
 app.get('/api/user-data', (req, res) => {
     const initData = req.headers['x-telegram-init-data'];
     // TODO: Додати валідацію даних від Telegram
