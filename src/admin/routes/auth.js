@@ -4,122 +4,105 @@ const router = express.Router();
 const adminService = require('../../services/adminService');
 const { rateLimiter } = require('../middleware/rateLimiter');
 
-// Аутентифікація
+// Логін сторінка
 router.get('/login', (req, res) => {
-    res.render('login', { layout: false });
+  res.render('login', {
+    layout: false,
+    error: req.query.error || null,
+    success: req.query.success || null
+  });
 });
 
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const admin = await adminService.validateAdmin(username, password);
-        
-        if (!admin) {
-            return res.render('login', {
-                layout: false,
-                error: 'Невірний логін або пароль'
-            });
-        }
-
-        const token = adminService.generateToken(admin);
-        
-        res.cookie('adminToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 24 * 60 * 60 * 1000 // 24 години
-        });
-
-        res.redirect('/admin/dashboard');
-    } catch (error) {
-        console.error('Login error:', error);
-        res.render('login', {
-            layout: false,
-            error: 'Помилка автентифікації'
-        });
+// Процес логіну
+router.post('/login', rateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 хвилин
+  max: 5 // максимум 5 спроб
+}), async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const admin = await adminService.validateCredentials(username, password);
+    
+    if (!admin) {
+      return res.redirect('/admin/login?error=' + encodeURIComponent('Невірний логін або пароль'));
     }
+
+    const token = adminService.generateToken(admin);
+    
+    res.cookie('adminToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 24 години
+    });
+
+    res.redirect('/admin/dashboard');
+  } catch (error) {
+    console.error('Login error:', error);
+    res.redirect('/admin/login?error=' + encodeURIComponent('Помилка при вході'));
+  }
 });
 
+// Вихід
 router.get('/logout', (req, res) => {
-    res.clearCookie('adminToken');
-    res.redirect('/admin/login');
+  res.clearCookie('adminToken');
+  res.redirect('/admin/login?success=' + encodeURIComponent('Ви успішно вийшли'));
 });
 
-// Використовуємо rate limiter для захисту від перебору
-router.use('/forgot-password', rateLimiter({
-    windowMs: 15 * 60 * 1000, // 15 хвилин
-    max: 5 // максимум 5 запитів
-}));
+// Відновлення паролю - сторінка
+router.get('/forgot-password', (req, res) => {
+  res.render('forgot-password', {
+    layout: false,
+    error: req.query.error || null,
+    success: req.query.success || null
+  });
+});
 
+// Відновлення паролю - процес
+router.post('/forgot-password', rateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 година
+  max: 3 // максимум 3 спроби
+}), async (req, res) => {
+  try {
+    const { email } = req.body;
+    const token = await adminService.generateResetToken(email);
 
-router.post('/forgot-password', async (req, res) => {
-    try {
-        const { email } = req.body;
+    // Завжди показуємо успішне повідомлення (захист від enumeration)
+    res.redirect('/admin/forgot-password?success=' + 
+      encodeURIComponent('Якщо email існує, інструкції з відновлення паролю будуть надіслані'));
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.redirect('/admin/forgot-password?error=' + 
+      encodeURIComponent('Помилка при відновленні паролю'));
+  }
+});
 
-        // Базова валідація email
-        if (!email || !email.includes('@')) {
-            return res.render('forgot-password', {
-                layout: false,
-                error: 'Будь ласка, введіть коректний email'
-            });
-        }
-
-        const sent = await adminService.sendPasswordResetEmail(email);
-        
-        // Завжди показуємо успішне повідомлення (захист від enumeration)
-        res.render('forgot-password', {
-            layout: false,
-            success: 'Якщо вказаний email існує, на нього буде надіслано інструкції з відновлення паролю'
-        });
-
-    } catch (error) {
-        console.error('Password reset error:', error);
-        
-        let errorMessage = 'Виникла помилка при обробці запиту';
-        if (error.message.includes('Зачекайте')) {
-            errorMessage = error.message;
-        }
-
-        res.render('forgot-password', {
-            layout: false,
-            error: errorMessage
-        });
-    }
+// Зміна паролю
+router.get('/reset-password/:token', (req, res) => {
+  res.render('reset-password', {
+    layout: false,
+    token: req.params.token,
+    error: req.query.error || null
+  });
 });
 
 router.post('/reset-password/:token', async (req, res) => {
-    try {
-        const { password, confirmPassword } = req.body;
-        const { token } = req.params;
+  try {
+    const { password, confirmPassword } = req.body;
+    const { token } = req.params;
 
-        // Валідація паролів
-        if (password !== confirmPassword) {
-            return res.render('reset-password', {
-                layout: false,
-                token,
-                error: 'Паролі не співпадають'
-            });
-        }
-
-        await adminService.resetPassword(token, password);
-
-        // Додаємо flash повідомлення про успіх
-        req.flash('success', 'Пароль успішно змінено. Тепер ви можете увійти.');
-        res.redirect('/admin/login');
-
-    } catch (error) {
-        console.error('Password reset error:', error);
-        
-        let errorMessage = 'Виникла помилка при зміні паролю';
-        if (error.message.includes('Пароль повинен')) {
-            errorMessage = error.message;
-        }
-
-        res.render('reset-password', {
-            layout: false,
-            token: req.params.token,
-            error: errorMessage
-        });
+    if (password !== confirmPassword) {
+      return res.redirect(`/admin/reset-password/${token}?error=` + 
+        encodeURIComponent('Паролі не співпадають'));
     }
+
+    await adminService.resetPassword(token, password);
+    res.redirect('/admin/login?success=' + 
+      encodeURIComponent('Пароль успішно змінено'));
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.redirect(`/admin/reset-password/${req.params.token}?error=` + 
+      encodeURIComponent('Помилка при зміні паролю'));
+  }
 });
 
 module.exports = router;
