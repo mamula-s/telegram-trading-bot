@@ -1,10 +1,11 @@
 // src/routes/admin/api.js
 const express = require('express');
 const router = express.Router();
-const { adminAuth, checkRole } = require('../../middlewares/adminAuth');
+const { adminAuth, checkRole } = require('../../middlewares/adminAuth'); // Виправлений шлях
 const UserController = require('../../controllers/admin/UserController');
 const SignalController = require('../../controllers/admin/SignalController');
 const SubscriptionController = require('../../controllers/admin/SubscriptionController');
+
 
 // Middleware для всіх адмін API роутів
 router.use(adminAuth);

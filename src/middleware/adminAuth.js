@@ -25,6 +25,7 @@ const adminAuth = async (req, res, next) => {
     req.admin = admin;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.clearCookie('adminToken');
     res.status(401).redirect('/admin/login');
   }
