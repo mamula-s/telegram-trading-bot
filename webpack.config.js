@@ -6,7 +6,7 @@ module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: './src/webApp/index.jsx',
   output: {
-    path: path.resolve(__dirname, 'src/public'),
+    path: path.resolve(__dirname, 'src/webApp/public'),
     filename: 'webapp.bundle.js',
     publicPath: '/',
     clean: true

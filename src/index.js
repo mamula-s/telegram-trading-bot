@@ -108,7 +108,7 @@ app.use((req, res, next) => {
 });
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public'), {
+app.use(express.static(path.join(__dirname, 'webApp/public'), {
   setHeaders: (res, filepath) => {
     if (filepath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
@@ -117,6 +117,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   }
 }));
+
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // View engine setup
@@ -143,22 +144,9 @@ app.get('/', (req, res) => {
 });
 
 // WebApp routes
+// WebApp routes
 app.get(['/webapp', '/webapp/*'], (req, res) => {
-  res.set({
-    'Content-Security-Policy': "default-src 'self' https://telegram.org https://*.telegram.org; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://telegram.org https://*.telegram.org; " +
-      "style-src 'self' 'unsafe-inline' https://telegram.org https://cdnjs.cloudflare.com; " +
-      "img-src 'self' data: blob: https://telegram.org https://*.telegram.org; " +
-      "font-src 'self' data: https://cdnjs.cloudflare.com; " +
-      "connect-src 'self' wss://*.telegram.org https://*.telegram.org https://telegram.org; " +
-      "frame-src 'self' https://telegram.org; " +
-      "object-src 'none'; " +
-      "media-src 'self'; " +
-      "worker-src 'self' blob:; " +
-      "child-src 'self' blob:;",
-    'X-Content-Type-Options': 'nosniff'
-  });
-  res.sendFile(path.join(__dirname, 'public', 'webapp.html'));
+  res.sendFile(path.join(__dirname, 'webApp/public/webapp.html'));
 });
 
 // API routes
