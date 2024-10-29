@@ -1,12 +1,47 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { ErrorBoundary } from 'react-error-boundary';
 import App from './App';
 import './styles/tailwind.css';
+
+const ErrorFallback = ({ error }) => {
+  return (
+    <div className="p-4 text-red-500">
+      <h2>Something went wrong:</h2>
+      <pre>{error.message}</pre>
+    </div>
+  );
+};
+
+// Ініціалізація Telegram WebApp
+const initTelegramWebApp = () => {
+  if (window.Telegram?.WebApp) {
+    try {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      
+      // Встановлюємо кольори теми
+      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#ffffff');
+      document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#000000');
+      document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams?.hint_color || '#999999');
+      document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams?.link_color || '#2481cc');
+      document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
+      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
+    } catch (error) {
+      console.error('Error initializing Telegram WebApp:', error);
+    }
+  }
+};
 
 const initApp = () => {
   try {
     console.log('Initializing app...');
+    
+    // Ініціалізуємо Telegram WebApp
+    initTelegramWebApp();
+    
     const container = document.getElementById('root');
     if (!container) {
       throw new Error('Root element not found');
@@ -15,11 +50,13 @@ const initApp = () => {
     const root = createRoot(container);
     
     root.render(
-      <React.StrictMode>
-        <BrowserRouter basename="/webapp">
-          <App />
-        </BrowserRouter>
-      </React.StrictMode>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <React.StrictMode>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </React.StrictMode>
+      </ErrorBoundary>
     );
     
     console.log('App initialized successfully');
@@ -33,25 +70,16 @@ const initApp = () => {
   }
 };
 
-// Ініціалізуємо додаток після завантаження DOM
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
-
-// Можемо ігнорувати помилку про ethereum provider
+// Ігноруємо помилку ethereum provider
 window.addEventListener('error', function(event) {
   if (event.message.includes('ethereum.initializeProvider')) {
     event.preventDefault();
   }
 });
 
-// Встановлюємо колір теми для Telegram WebApp
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-  document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-  document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
-  document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
+// Ініціалізуємо додаток після завантаження DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }
