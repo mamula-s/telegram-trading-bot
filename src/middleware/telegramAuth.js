@@ -10,9 +10,6 @@ class TelegramAuthMiddleware {
     }
   }
 
-  /**
-   * Validates Telegram WebApp init data
-   */
   validateWebAppData = (req, res, next) => {
     try {
       // Skip validation in development if enabled
@@ -56,12 +53,9 @@ class TelegramAuthMiddleware {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  /**
-   * Parse init data from query string format
-   */
-  private parseInitData(initData) {
+  parseInitData(initData) {
     const params = new URLSearchParams(initData);
     const data = {};
     
@@ -82,18 +76,12 @@ class TelegramAuthMiddleware {
     return data;
   }
 
-  /**
-   * Check if init data is not older than 24 hours
-   */
-  private isInitDataExpired(authDate) {
+  isInitDataExpired(authDate) {
     const now = Math.floor(Date.now() / 1000);
     return (now - authDate) > 86400; // 24 hours
   }
 
-  /**
-   * Validate data hash using bot token
-   */
-  private validateHash(hash, data) {
+  validateHash(hash, data) {
     // Sort keys and create data check string
     const checkString = Object.entries(data)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -115,10 +103,7 @@ class TelegramAuthMiddleware {
     return calculatedHash === hash;
   }
 
-  /**
-   * Parse and validate user data
-   */
-  private parseUserData(data) {
+  parseUserData(data) {
     if (!data.user) {
       throw new Error('No user data provided');
     }
