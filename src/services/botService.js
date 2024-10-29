@@ -1,7 +1,7 @@
 // src/services/botService.js
 const TelegramBot = require('node-telegram-bot-api');
 const userService = require('./userService');
-const { formatMessage } = require('../utils/messageFormatter');
+const { formatSignalMessage, formatNewsMessage } = require('../utils/messageFormatter');
 
 class BotService {
   constructor() {
