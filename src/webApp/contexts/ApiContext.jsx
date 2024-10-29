@@ -4,7 +4,7 @@ import useTelegram from '../hooks/useTelegram';
 const ApiContext = createContext(null);
 
 export const ApiProvider = ({ children }) => {
-  const { user, showAlert } = useTelegram();
+  const { showAlert, initData } = useTelegram();
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchApi = useCallback(async (endpoint, options = {}) => {
@@ -14,24 +14,25 @@ export const ApiProvider = ({ children }) => {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-User-Id': user?.id,
+          'X-Telegram-Init-Data': initData,
           ...options.headers
         }
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Щось пішло не так');
       }
 
       return await response.json();
     } catch (error) {
-      showAlert(error.message);
+      console.error('API Error:', error);
+      showAlert(error.message || 'Помилка при виконанні запиту');
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [user, showAlert]);
+  }, [showAlert, initData]);
 
   return (
     <ApiContext.Provider value={{ fetchApi, isLoading }}>

@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react';
 const useTelegram = () => {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState(null);
-  const [initData, setInitData] = useState('');
   const tg = window.Telegram?.WebApp;
 
   useEffect(() => {
@@ -13,23 +12,16 @@ const useTelegram = () => {
     }
 
     try {
-      setInitData(tg.initData || '');
-      setUser(tg.initDataUnsafe?.user || null);
-      
-      // Налаштування теми
-      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-      document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-      document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor);
-      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor);
-      document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor);
+      // Встановлюємо теми
+      const themeParams = tg.themeParams || {};
+      Object.entries(themeParams).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--tg-theme-${key}`, value);
+      });
 
-      // Налаштування додатку
+      setUser(tg.initDataUnsafe?.user || null);
       tg.ready();
       tg.expand();
       setReady(true);
-      
-      // Додаємо хендлер для події закриття
-      tg.enableClosingConfirmation();
     } catch (error) {
       console.error('Error initializing Telegram WebApp:', error);
     }
@@ -46,34 +38,18 @@ const useTelegram = () => {
   const showConfirm = useCallback((message) => {
     if (tg) {
       return new Promise((resolve) => {
-        tg.showConfirm(message, (confirmed) => {
-          resolve(confirmed);
-        });
+        tg.showConfirm(message, resolve);
       });
     }
     return Promise.resolve(window.confirm(message));
   }, [tg]);
 
-  const hapticFeedback = useCallback((style) => {
+  const hapticFeedback = useCallback((style = 'medium') => {
     if (tg?.HapticFeedback) {
-      switch (style) {
-        case 'light':
-          tg.HapticFeedback.impactOccurred('light');
-          break;
-        case 'medium':
-          tg.HapticFeedback.impactOccurred('medium');
-          break;
-        case 'heavy':
-          tg.HapticFeedback.impactOccurred('heavy');
-          break;
-        case 'rigid':
-          tg.HapticFeedback.impactOccurred('rigid');
-          break;
-        case 'soft':
-          tg.HapticFeedback.impactOccurred('soft');
-          break;
-        default:
-          tg.HapticFeedback.impactOccurred('medium');
+      try {
+        tg.HapticFeedback.impactOccurred(style);
+      } catch (error) {
+        // Ігноруємо помилку, якщо haptic feedback не підтримується
       }
     }
   }, [tg]);
@@ -86,31 +62,14 @@ const useTelegram = () => {
     }
   }, [tg]);
 
-  const openTelegramLink = useCallback((url) => {
-    if (tg) {
-      tg.openTelegramLink(url);
-    } else {
-      window.open(url, '_blank');
-    }
-  }, [tg]);
-
-  const close = useCallback(() => {
-    if (tg) {
-      tg.close();
-    }
-  }, [tg]);
-
   return {
-    tg,
     ready,
     user,
-    initData,
     showAlert,
     showConfirm,
     hapticFeedback,
     openLink,
-    openTelegramLink,
-    close
+    initData: tg?.initData || ''
   };
 };
 

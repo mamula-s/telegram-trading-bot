@@ -14,6 +14,8 @@ const botService = require('./services/botService');
 const subscriptionService = require('./services/subscriptionService');
 
 const expressLayouts = require('express-ejs-layouts');
+const apiRoutes = require('./routes/api');
+const adminRoutes = require('./routes/adminRoutes');
 
 
 const bot = new TelegramBot(process.env.BOT_TOKEN);
@@ -24,6 +26,8 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use('/api', apiRoutes);
+app.use('/admin', adminRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 

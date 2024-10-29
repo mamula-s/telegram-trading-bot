@@ -9,23 +9,42 @@ const { validateWebAppData } = require('../../middleware/telegramAuth');
 router.use(validateWebAppData);
 
 // Signals
-router.get('/signals/futures', async (req, res) => {
-  try {
-    const signals = await signalService.getFuturesSignals();
-    res.json(signals);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching futures signals' });
-  }
-});
-
-router.get('/signals/spot', async (req, res) => {
-  try {
-    const signals = await signalService.getSpotSignals();
-    res.json(signals);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching spot signals' });
-  }
-});
+router.get('/futures/stats', async (req, res) => {
+    try {
+      const stats = await signalService.getFuturesStats(req.user.id);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  router.get('/futures/signals', async (req, res) => {
+    try {
+      const signals = await signalService.getFuturesSignals(req.user.id);
+      res.json({ signals, performance: await signalService.getPerformanceData(req.user.id) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  router.get('/spot/stats', async (req, res) => {
+    try {
+      const stats = await signalService.getSpotStats(req.user.id);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  router.get('/spot/signals', async (req, res) => {
+    try {
+      const signals = await signalService.getSpotSignals(req.user.id);
+      res.json({ signals, performance: await signalService.getPerformanceData(req.user.id) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
 
 // User Profile
 router.get('/profile', async (req, res) => {
