@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const adminService = require('../../services/adminService');
-const { rateLimiter } = require('../middleware/rateLimiter');
+const { rateLimiters } = require('../middleware/rateLimiter');
 
 // Логін сторінка
 router.get('/login', (req, res) => {
@@ -14,10 +14,7 @@ router.get('/login', (req, res) => {
 });
 
 // Процес логіну
-router.post('/login', rateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 хвилин
-  max: 5 // максимум 5 спроб
-}), async (req, res) => {
+router.post('/login', rateLimiters.auth, async (req, res) => {
   try {
     const { username, password } = req.body;
     const admin = await adminService.validateCredentials(username, password);
@@ -58,10 +55,7 @@ router.get('/forgot-password', (req, res) => {
 });
 
 // Відновлення паролю - процес
-router.post('/forgot-password', rateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 година
-  max: 3 // максимум 3 спроби
-}), async (req, res) => {
+router.post('/forgot-password', rateLimiters.passwordReset, async (req, res) => {
   try {
     const { email } = req.body;
     const token = await adminService.generateResetToken(email);
@@ -85,7 +79,7 @@ router.get('/reset-password/:token', (req, res) => {
   });
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', rateLimiters.passwordReset, async (req, res) => {
   try {
     const { password, confirmPassword } = req.body;
     const { token } = req.params;

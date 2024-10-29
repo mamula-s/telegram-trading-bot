@@ -1,100 +1,58 @@
 // src/admin/middleware/rateLimiter.js
 const rateLimit = require('express-rate-limit');
 
-const createRateLimiter = (options = {}) => {
-  const {
-    windowMs = 15 * 60 * 1000, // За замовчуванням 15 хвилин
-    max = 100, // За замовчуванням 100 запитів
-    message = 'Too many requests, please try again later.',
-    statusCode = 429,
-    headers = true,
-    skipSuccessfulRequests = false,
-    skipFailedRequests = false
-  } = options;
-
-  return rateLimit({
-    windowMs,
-    max,
-    message: { error: message },
-    statusCode,
-    headers,
-    skipSuccessfulRequests,
-    skipFailedRequests,
-    // Функція для генерації ключа ліміту
-    keyGenerator: (req) => {
-      // Використовуємо IP + user agent для кращої ідентифікації
-      return `${req.ip}-${req.headers['user-agent']}`;
-    },
-    // Обробник для різних типів відповідей
-    handler: (req, res) => {
-      if (req.accepts('html')) {
-        // Для HTML запитів
-        res.status(statusCode).render('error', {
-          layout: false,
-          error: message,
-          retry: Math.ceil(windowMs / 1000 / 60) // у хвилинах
-        });
-      } else {
-        // Для API запитів
-        res.status(statusCode).json({
-          error: message,
-          retryAfter: Math.ceil(windowMs / 1000)
-        });
-      }
-    },
-    // Обробник для пропуску перевірки
-    skip: (req) => {
-      // Пропускаємо перевірку для певних IP адрес
-      const whitelistedIPs = process.env.RATE_LIMIT_WHITELIST 
-        ? process.env.RATE_LIMIT_WHITELIST.split(',') 
-        : [];
-      
-      return whitelistedIPs.includes(req.ip);
-    },
-    // Store для зберігання лічильників
-    store: process.env.REDIS_URL ? new RedisStore({
-      // Конфігурація Redis для розподіленого зберігання
-      redisURL: process.env.REDIS_URL,
-      prefix: 'rl:',
-      // Автоматичне очищення застарілих записів
-      expiry: Math.ceil(windowMs / 1000)
-    }) : undefined
-  });
-};
-
-// Створюємо готові конфігурації для різних сценаріїв
+// Створюємо окремі обмежувачі для різних ендпоінтів
 const rateLimiters = {
   // Для API endpoints
-  api: createRateLimiter({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many API requests'
+  api: rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 хвилин
+    max: 100, // Ліміт запитів
+    message: { error: 'Too many API requests' },
+    standardHeaders: true,
+    legacyHeaders: false
   }),
 
   // Для аутентифікації
-  auth: createRateLimiter({
+  auth: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 година
     max: 5, // 5 спроб
-    message: 'Too many login attempts, please try again later',
-    skipSuccessfulRequests: true // Успішні спроби не враховуються
+    message: { error: 'Too many login attempts' },
+    standardHeaders: true,
+    legacyHeaders: false
   }),
 
   // Для відновлення паролю
-  passwordReset: createRateLimiter({
+  passwordReset: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 година
     max: 3, // 3 спроби
-    message: 'Too many password reset attempts'
+    message: { error: 'Too many password reset attempts' },
+    standardHeaders: true,
+    legacyHeaders: false
   }),
 
   // Для WebSocket з'єднань
-  websocket: createRateLimiter({
+  websocket: rateLimit({
     windowMs: 60 * 1000, // 1 хвилина
     max: 60, // 60 з'єднань
-    message: 'Too many WebSocket connections'
+    message: { error: 'Too many WebSocket connections' },
+    standardHeaders: true,
+    legacyHeaders: false
   })
 };
 
+// Додаткова функція для створення кастомного лімітера
+const createRateLimiter = (options = {}) => {
+  return rateLimit({
+    windowMs: options.windowMs || 15 * 60 * 1000,
+    max: options.max || 100,
+    message: options.message || { error: 'Too many requests' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    ...options
+  });
+};
+
 module.exports = {
-  createRateLimiter,
-  rateLimiters
+  rateLimiters,
+  createRateLimiter
 };
