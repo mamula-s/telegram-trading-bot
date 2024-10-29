@@ -1,4 +1,3 @@
-// src/routes/admin/api.js
 const express = require('express');
 const router = express.Router();
 const paths = require('../../config/paths');
