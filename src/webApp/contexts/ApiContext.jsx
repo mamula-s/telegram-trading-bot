@@ -21,29 +21,50 @@ export const ApiProvider = ({ children }) => {
     setError(null);
     
     try {
-      if (!initData) {
-        throw new Error('No init data provided');
+      // Add retry logic
+      const maxRetries = 3;
+      let attempt = 0;
+      let lastError;
+
+      while (attempt < maxRetries) {
+        try {
+          const response = await fetch(`/api/${endpoint}`, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Telegram-Init-Data': initData,
+              ...options.headers,
+            },
+          });
+
+          if (response.status === 401) {
+            const error = await response.json();
+            if (error.code === 'NO_INIT_DATA') {
+              // Wait for initData to be available
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              attempt++;
+              continue;
+            }
+          }
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          lastError = error;
+          if (attempt === maxRetries - 1) throw error;
+          attempt++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
       }
 
-      const response = await fetch(`/api/${endpoint}`, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': initData,
-          ...options.headers,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      throw lastError;
     } catch (err) {
       setError(err.message);
-      console.error('API Error:', err);
       throw err;
     } finally {
       setIsLoading(false);

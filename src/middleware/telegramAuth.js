@@ -1,130 +1,68 @@
-// src/middleware/telegramAuth.js
 const crypto = require('crypto');
-const { AppError } = require('./errorHandler');
 
-class TelegramAuthMiddleware {
-  constructor() {
-    this.botToken = process.env.BOT_TOKEN;
-    if (!this.botToken) {
-      throw new Error('BOT_TOKEN is required');
+function verifyTelegramWebAppData(initData, botToken) {
+  // Parse init data
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get('hash');
+  const dataToCheck = [];
+  
+  urlParams.sort();
+  urlParams.forEach((value, key) => {
+    if (key !== 'hash') {
+      dataToCheck.push(`${key}=${value}`);
     }
-  }
+  });
 
-  validateWebAppData = (req, res, next) => {
-    try {
-      // Skip validation in development if enabled
-      if (process.env.NODE_ENV === 'development' && process.env.SKIP_TELEGRAM_AUTH) {
-        req.user = { id: 'test_user' };
-        return next();
-      }
+  const dataCheckString = dataToCheck.join('\n');
+  const secretKey = crypto
+    .createHmac('sha256', 'WebAppData')
+    .update(botToken)
+    .digest();
+  
+  const calculatedHash = crypto
+    .createHmac('sha256', secretKey)
+    .update(dataCheckString)
+    .digest('hex');
 
-      const initData = req.headers['x-telegram-init-data'];
-      
-      if (!initData) {
-        throw new AppError('No init data provided', 401);
-      }
-
-      // Parse and validate data
-      const { hash, ...data } = this.parseInitData(initData);
-      
-      if (!hash) {
-        throw new AppError('No hash provided', 401);
-      }
-
-      // Check if data is expired
-      const authDate = parseInt(data.auth_date);
-      if (this.isInitDataExpired(authDate)) {
-        throw new AppError('Init data is expired', 401);
-      }
-
-      // Validate hash
-      if (!this.validateHash(hash, data)) {
-        throw new AppError('Invalid hash', 401);
-      }
-
-      // Parse user data
-      try {
-        req.user = this.parseUserData(data);
-      } catch (error) {
-        throw new AppError('Invalid user data', 401);
-      }
-
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  parseInitData(initData) {
-    const params = new URLSearchParams(initData);
-    const data = {};
-    
-    for (const [key, value] of params) {
-      if (key === 'hash') {
-        data.hash = value;
-      } else {
-        try {
-          // Try to parse JSON values
-          data[key] = JSON.parse(value);
-        } catch {
-          // If not JSON, use raw value
-          data[key] = value;
-        }
-      }
-    }
-
-    return data;
-  }
-
-  isInitDataExpired(authDate) {
-    const now = Math.floor(Date.now() / 1000);
-    return (now - authDate) > 86400; // 24 hours
-  }
-
-  validateHash(hash, data) {
-    // Sort keys and create data check string
-    const checkString = Object.entries(data)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join('\n');
-
-    // Generate secret key
-    const secretKey = crypto
-      .createHmac('sha256', 'WebAppData')
-      .update(this.botToken)
-      .digest();
-
-    // Calculate hash
-    const calculatedHash = crypto
-      .createHmac('sha256', secretKey)
-      .update(checkString)
-      .digest('hex');
-
-    return calculatedHash === hash;
-  }
-
-  parseUserData(data) {
-    if (!data.user) {
-      throw new Error('No user data provided');
-    }
-
-    const user = typeof data.user === 'string' 
-      ? JSON.parse(data.user) 
-      : data.user;
-
-    if (!user.id) {
-      throw new Error('Invalid user data: no id');
-    }
-
-    return {
-      id: user.id.toString(),
-      first_name: user.first_name,
-      last_name: user.last_name,
-      username: user.username,
-      language_code: user.language_code,
-      is_premium: user.is_premium
-    };
-  }
+  return calculatedHash === hash;
 }
 
-module.exports = new TelegramAuthMiddleware();
+const authMiddleware = (req, res, next) => {
+  try {
+    const initData = req.headers['x-telegram-init-data'];
+    
+    if (!initData) {
+      return res.status(401).json({ 
+        error: 'No init data provided',
+        code: 'NO_INIT_DATA'
+      });
+    }
+
+    const isValid = verifyTelegramWebAppData(initData, process.env.BOT_TOKEN);
+    
+    if (!isValid) {
+      return res.status(401).json({ 
+        error: 'Invalid init data',
+        code: 'INVALID_INIT_DATA'
+      });
+    }
+
+    // Parse user data
+    const urlParams = new URLSearchParams(initData);
+    const userDataStr = urlParams.get('user');
+    
+    if (userDataStr) {
+      req.telegramUser = JSON.parse(userDataStr);
+    }
+
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(401).json({ 
+      error: 'Authentication failed',
+      code: 'AUTH_FAILED'
+    });
+  }
+};
+
+module.exports = authMiddleware;

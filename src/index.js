@@ -28,6 +28,8 @@ const expressLayouts = require('express-ejs-layouts');
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./admin/routes');
 const adminApiRoutes = require('./routes/admin/api');
+const authMiddleware = require('./middleware/telegramAuth');
+
 
 // Initialize bot
 const bot = new TelegramBot(process.env.BOT_TOKEN);
@@ -102,6 +104,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Telegram-Init-Data']
 }));
+
+// API routes
+app.use('/api', authMiddleware);
 
 // Content Type Middleware
 app.use((req, res, next) => {

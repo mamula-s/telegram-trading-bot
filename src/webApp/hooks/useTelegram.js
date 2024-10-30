@@ -4,6 +4,7 @@ export function useTelegram() {
   const [webApp, setWebApp] = useState(null);
   const [user, setUser] = useState(null);
   const [initData, setInitData] = useState('');
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -14,7 +15,8 @@ export function useTelegram() {
 
         setWebApp(tg);
         setUser(tg.initDataUnsafe?.user);
-        setInitData(tg.initData || '');
+        setInitData(tg.initData);
+        setIsReady(true);
 
         // Встановлюємо параметри теми
         document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#ffffff');
@@ -42,8 +44,7 @@ export function useTelegram() {
     }
   };
 
-  return { webApp, user, initData, openLink };
+  return { webApp, user, initData, isReady, openLink };
 }
 
-// Для підтримки default імпорту
 export default useTelegram;
