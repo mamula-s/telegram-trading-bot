@@ -53,7 +53,10 @@ app.use(helmet({
         "'self'",
         "wss://*.telegram.org",
         "https://*.telegram.org",
-        "https://telegram.org"
+        "https://telegram.org",
+        process.env.WS_URL || "'self'",
+        "ws://localhost:*",
+        "wss://localhost:*"
       ],
       styleSrc: [
         "'self'",
@@ -82,7 +85,9 @@ app.use(helmet({
       workerSrc: ["'self'", "blob:"],
       childSrc: ["'self'", "blob:"]
     }
-  }
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false
 }));
 
 // Basic middleware
@@ -109,8 +114,16 @@ app.use((req, res, next) => {
 });
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/static', express.static(path.join(__dirname, 'webApp/public')));
+app.use('/webapp', express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filepath) => {
+    if (filepath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filepath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    }
+  }
+}));
+
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // View engine setup
@@ -131,6 +144,35 @@ app.use('/api/admin', adminApiRoutes);
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 
+// WebApp HTML template
+const webAppTemplate = `
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="color-scheme" content="light dark">
+    <title>Trading Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="/webapp/styles.css" rel="stylesheet">
+    <base href="/webapp/" />
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+    <script>
+        window.addEventListener('load', () => {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+        });
+    </script>
+    <script src="/webapp/webapp.bundle.js"></script>
+</body>
+</html>
+`;
+
 // Main routes
 app.get('/', (req, res) => {
   res.send('Welcome to the Telegram Trading Bot');
@@ -144,72 +186,47 @@ app.get(['/webapp', '/webapp/*'], (req, res) => {
       "style-src 'self' 'unsafe-inline' https://telegram.org https://cdnjs.cloudflare.com; " +
       "img-src 'self' data: blob: https://telegram.org https://*.telegram.org; " +
       "font-src 'self' data: https://cdnjs.cloudflare.com; " +
-      "connect-src 'self' wss://*.telegram.org https://*.telegram.org https://telegram.org; " +
+      "connect-src 'self' wss://*.telegram.org https://*.telegram.org https://telegram.org " + 
+      (process.env.WS_URL || "'self'") + " ws://localhost:* wss://localhost:*; " +
       "frame-src 'self' https://telegram.org; " +
       "object-src 'none'; " +
       "media-src 'self'; " +
       "worker-src 'self' blob:; " +
-      "child-src 'self' blob:;"
+      "child-src 'self' blob:;",
+    'Cross-Origin-Embedder-Policy': 'unsafe-none',
+    'Cross-Origin-Resource-Policy': 'cross-origin'
   });
 
-  // Спочатку перевіряємо в public
   const publicPath = path.join(__dirname, 'public', 'webapp.html');
-  const webAppPath = path.join(__dirname, 'webApp', 'public', 'webapp.html');
 
   if (fs.existsSync(publicPath)) {
-    res.sendFile(publicPath);
-  } else if (fs.existsSync(webAppPath)) {
-    res.sendFile(webAppPath);
+    res.sendFile(publicPath, (err) => {
+      if (err) {
+        console.error('Error sending webapp.html:', err);
+        res.send(webAppTemplate);
+      }
+    });
   } else {
-    // Якщо файл не знайдено, повертаємо базовий HTML
-    const html = `
-      <!DOCTYPE html>
-      <html lang="uk">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-          <meta name="theme-color" content="#ffffff">
-          <meta name="color-scheme" content="light dark">
-          <title>Trading Bot</title>
-          <script src="https://telegram.org/js/telegram-web-app.js"></script>
-          <link href="/styles.css" rel="stylesheet">
-      </head>
-      <body class="bg-gray-50">
-          <div id="root"></div>
-          <script>
-              window.addEventListener('load', () => {
-                  if (window.Telegram?.WebApp) {
-                      window.Telegram.WebApp.ready();
-                      window.Telegram.WebApp.expand();
-                  }
-              });
-          </script>
-          <script src="/webapp.bundle.js"></script>
-      </body>
-      </html>
-    `;
-    res.send(html);
+    res.send(webAppTemplate);
   }
 });
 
 // API routes
-app.get('/api/portfolio', async (req, res) => {
+app.get('/api/portfolio', async (req, res, next) => {
   try {
     const portfolio = await userService.getUserPortfolio(req.user?.id);
     res.json(portfolio);
   } catch (error) {
-    console.error('Error fetching portfolio:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
-app.get('/api/signals', async (req, res) => {
+app.get('/api/signals', async (req, res, next) => {
   try {
     const signals = await signalService.getRecentSignals('vip', 5);
     res.json(signals);
   } catch (error) {
-    console.error('Error fetching signals:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
@@ -225,18 +242,32 @@ app.post(`/webhook/${process.env.BOT_TOKEN}`, async (req, res) => {
   }
 });
 
-app.get('/webhook-info', async (req, res) => {
+app.get('/webhook-info', async (req, res, next) => {
   try {
     const webhookInfo = await bot.getWebHookInfo();
     res.json(webhookInfo);
   } catch (error) {
-    console.error('Error getting webhook info:', error);
-    res.status(500).json({ error: 'Failed to get webhook info' });
+    next(error);
   }
 });
 
 // Load bot commands
 require('./bot/commands')(bot, userService, signalService, subscriptions);
+
+// 404 Handler
+app.use((req, res) => {
+  if (req.path.startsWith('/webapp')) {
+    res.send(webAppTemplate);
+  } else if (req.path.startsWith('/admin')) {
+    res.status(404).render('error', {
+      layout: false,
+      error: { status: 404 },
+      message: 'Сторінку не знайдено'
+    });
+  } else {
+    res.status(404).json({ error: 'Not Found' });
+  }
+});
 
 // Error handler
 app.use(globalErrorHandler);

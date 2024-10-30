@@ -1,37 +1,42 @@
-// src/webApp/hooks/useTelegram.js
-import { useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
-const useTelegram = () => {
-  const tg = window.Telegram?.WebApp;
+export const useTelegram = () => {
+  const [webApp, setWebApp] = useState(null);
+  const [user, setUser] = useState(null);
+  const [initData, setInitData] = useState('');
 
   useEffect(() => {
+    const tg = window.Telegram?.WebApp;
     if (tg) {
-      tg.ready();
-      // Встановлюємо кольори теми
-      tg.setHeaderColor('bg_color');
-      tg.setBackgroundColor('#ffffff');
-    }
-  }, [tg]);
+      try {
+        tg.ready();
+        tg.expand();
 
-  const showAlert = useCallback((message) => {
-    if (tg?.showPopup) {
-      tg.showPopup({
-        message,
-        buttons: [{ type: 'ok' }]
-      });
-    } else {
-      // Fallback для версій без підтримки showPopup
-      alert(message);
+        // Get init data
+        const initDataRaw = tg.initData || '';
+        setInitData(initDataRaw);
+
+        // Get user data
+        const userData = tg.initDataUnsafe?.user;
+        setUser(userData);
+
+        setWebApp(tg);
+      } catch (error) {
+        console.error('Error initializing Telegram WebApp:', error);
+      }
     }
-  }, [tg]);
+  }, []);
+
+  const navigate = (path) => {
+    if (webApp?.HapticFeedback) {
+      webApp.HapticFeedback.impactOccurred('light');
+    }
+  };
 
   return {
-    tg,
-    user: tg?.initDataUnsafe?.user,
-    showAlert,
-    close: tg?.close,
-    expand: tg?.expand
+    webApp,
+    user,
+    initData,
+    navigate
   };
 };
-
-export default useTelegram;

@@ -65,11 +65,12 @@
     "css-loader": "6.10.0",
     "postcss-loader": "8.1.1",
     "style-loader": "3.3.4",
+    "terser-webpack-plugin": "5.3.10",
     "typescript": "^5.3.3",
     "webpack": "5.90.3",
     "webpack-cli": "5.1.4"
   },
- "scripts": {
+  "scripts": {
     "prestart": "node scripts/check-structure.js",
     "start": "node src/index.js",
     "dev": "concurrently \"npm run watch:css\" \"npm run watch:webpack\" \"nodemon src/index.js\"",

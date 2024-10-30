@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useTelegram } from '../hooks/useTelegram';
 
 const ApiContext = createContext();
 
@@ -13,15 +14,18 @@ export const useApi = () => {
 export const ApiProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { initData } = useTelegram();
 
   const fetchApi = async (endpoint, options = {}) => {
     setIsLoading(true);
     setError(null);
+    
     try {
       const response = await fetch(`/api/${endpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          'X-Telegram-Init-Data': initData,
           ...options.headers,
         },
       });
