@@ -21,6 +21,10 @@ export const ApiProvider = ({ children }) => {
     setError(null);
     
     try {
+      if (!initData) {
+        throw new Error('No init data provided');
+      }
+
       const response = await fetch(`/api/${endpoint}`, {
         ...options,
         headers: {
@@ -30,15 +34,16 @@ export const ApiProvider = ({ children }) => {
         },
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
       return data;
     } catch (err) {
       setError(err.message);
+      console.error('API Error:', err);
       throw err;
     } finally {
       setIsLoading(false);
