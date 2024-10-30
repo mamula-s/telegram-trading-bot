@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
 const { CronJob } = require('cron');
 const cors = require('cors');
@@ -110,7 +111,6 @@ app.use((req, res, next) => {
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/static', express.static(path.join(__dirname, 'webApp/public')));
-
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // View engine setup
@@ -137,7 +137,6 @@ app.get('/', (req, res) => {
 });
 
 // WebApp routes
-// WebApp routes
 app.get(['/webapp', '/webapp/*'], (req, res) => {
   res.set({
     'Content-Security-Policy': "default-src 'self' https://telegram.org https://*.telegram.org; " +
@@ -152,6 +151,46 @@ app.get(['/webapp', '/webapp/*'], (req, res) => {
       "worker-src 'self' blob:; " +
       "child-src 'self' blob:;"
   });
+
+  // Спочатку перевіряємо в public
+  const publicPath = path.join(__dirname, 'public', 'webapp.html');
+  const webAppPath = path.join(__dirname, 'webApp', 'public', 'webapp.html');
+
+  if (fs.existsSync(publicPath)) {
+    res.sendFile(publicPath);
+  } else if (fs.existsSync(webAppPath)) {
+    res.sendFile(webAppPath);
+  } else {
+    // Якщо файл не знайдено, повертаємо базовий HTML
+    const html = `
+      <!DOCTYPE html>
+      <html lang="uk">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <meta name="theme-color" content="#ffffff">
+          <meta name="color-scheme" content="light dark">
+          <title>Trading Bot</title>
+          <script src="https://telegram.org/js/telegram-web-app.js"></script>
+          <link href="/styles.css" rel="stylesheet">
+      </head>
+      <body class="bg-gray-50">
+          <div id="root"></div>
+          <script>
+              window.addEventListener('load', () => {
+                  if (window.Telegram?.WebApp) {
+                      window.Telegram.WebApp.ready();
+                      window.Telegram.WebApp.expand();
+                  }
+              });
+          </script>
+          <script src="/webapp.bundle.js"></script>
+      </body>
+      </html>
+    `;
+    res.send(html);
+  }
+});
 
 // API routes
 app.get('/api/portfolio', async (req, res) => {
@@ -199,49 +238,8 @@ app.get('/webhook-info', async (req, res) => {
 // Load bot commands
 require('./bot/commands')(bot, userService, signalService, subscriptions);
 
-// 404 Handler
-app.use((req, res) => {
-  if (req.accepts('html')) {
-    if (req.path.startsWith('/admin')) {
-      res.status(404).render('error', {
-        layout: false,
-        error: { status: 404 },
-        message: 'Сторінку не знайдено'
-      });
-    } else if (req.path.startsWith('/webapp')) {
-      res.sendFile(path.join(__dirname, 'public', 'webapp.html'), (err) => {
-        if (err) {
-          console.error('Error sending webapp.html:', err);
-          res.status(500).json({ error: 'Internal Server Error' });
-        }
-      });
-    } else {
-      res.status(404).json({ error: 'Not Found' });
-    }
-  } else {
-    res.status(404).json({ error: 'Not Found' });
-  }
-});
-
 // Error handler
-app.use((err, req, res, next) => {
-  console.error('ERROR 💥', err);
-
-  if (req.path.startsWith('/admin')) {
-    res.status(err.status || 500).render('error', {
-      layout: false,
-      error: { status: err.status || 500 },
-      message: err.message || 'Something went wrong!'
-    });
-  } else if (req.accepts('json')) {
-    res.status(err.status || 500).json({
-      status: 'error',
-      message: err.message
-    });
-  } else {
-    res.status(err.status || 500).send(err.message);
-  }
-});
+app.use(globalErrorHandler);
 
 // Cron jobs
 const subscriptionCheckJob = new CronJob('0 12 * * *', () => {
@@ -257,15 +255,13 @@ setupWebSocket(server);
 // Initialize server
 const startServer = async () => {
   try {
-    // Connect to database
     await connectDB();
     console.log('Database connected successfully');
 
-    // Setup webhook
     const webhookUrl = `${process.env.BASE_URL}/webhook/${process.env.BOT_TOKEN}`;
     await botService.setWebhook(webhookUrl);
+    console.log('Webhook встановлено успішно');
     
-    // Start server
     server.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
@@ -280,11 +276,9 @@ const shutdown = async () => {
   console.log('Shutting down gracefully...');
   
   try {
-    // Close database connection
     await sequelize.close();
     console.log('Database connection closed');
     
-    // Close WebSocket server
     if (global.wss) {
       global.wss.clients.forEach(client => {
         client.close();
@@ -293,7 +287,6 @@ const shutdown = async () => {
       console.log('WebSocket server closed');
     }
     
-    // Close HTTP server
     server.close(() => {
       console.log('HTTP server closed');
       process.exit(0);
