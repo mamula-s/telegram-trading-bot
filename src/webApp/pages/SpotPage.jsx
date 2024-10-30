@@ -13,7 +13,7 @@ import Loading from '../components/Loading';
 const SpotPage = () => {
   const { addNotification } = useNotification();
   const { fetchApi } = useApi();
-  const { connected } = useWebSocketContext();
+  const { connected } = useWebSocket();
   const [isLoading, setIsLoading] = useState(true);
 
   // WebSocket підключення

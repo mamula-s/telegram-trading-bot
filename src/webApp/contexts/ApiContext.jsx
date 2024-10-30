@@ -12,9 +12,11 @@ export const useApi = () => {
 
 export const ApiProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchApi = async (endpoint, options = {}) => {
     setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch(`/api/${endpoint}`, {
         ...options,
@@ -24,22 +26,28 @@ export const ApiProvider = ({ children }) => {
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
       return data;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ApiContext.Provider value={{ fetchApi, isLoading }}>
+    <ApiContext.Provider value={{ 
+      fetchApi, 
+      isLoading, 
+      error,
+      clearError: () => setError(null) 
+    }}>
       {children}
     </ApiContext.Provider>
   );

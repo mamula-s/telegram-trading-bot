@@ -2,19 +2,11 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const WebSocketContext = createContext();
 
-export const useWebSocket = (channel) => {
+export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
   if (!context) {
     throw new Error('useWebSocket must be used within a WebSocketProvider');
   }
-
-  useEffect(() => {
-    if (channel) {
-      context.subscribe(channel);
-      return () => context.unsubscribe(channel);
-    }
-  }, [channel, context]);
-
   return context;
 };
 
@@ -23,30 +15,50 @@ export const WebSocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
+    const connectWebSocket = () => {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-    ws.onopen = () => {
-      console.log('WebSocket Connected');
-      setConnected(true);
+        ws.onopen = () => {
+          console.log('WebSocket Connected');
+          setConnected(true);
+        };
+
+        ws.onclose = () => {
+          console.log('WebSocket Disconnected');
+          setConnected(false);
+          // Спроба перепідключення через 5 секунд
+          setTimeout(connectWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket Error:', error);
+          setConnected(false);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const customEvent = new CustomEvent('ws_message', { detail: data });
+            window.dispatchEvent(customEvent);
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
+
+        setSocket(ws);
+      } catch (error) {
+        console.error('Error connecting to WebSocket:', error);
+      }
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket Disconnected');
-      setConnected(false);
-      // Спроба перепідключення через 5 секунд
-      setTimeout(() => setSocket(null), 5000);
-    };
-
-    ws.onmessage = (event) => {
-      const customEvent = new CustomEvent('ws_message', { detail: JSON.parse(event.data) });
-      window.dispatchEvent(customEvent);
-    };
-
-    setSocket(ws);
+    connectWebSocket();
 
     return () => {
-      ws.close();
+      if (socket) {
+        socket.close();
+      }
     };
   }, []);
 
@@ -62,8 +74,19 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
 
+  const sendMessage = (message) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(message));
+    }
+  };
+
   return (
-    <WebSocketContext.Provider value={{ connected, subscribe, unsubscribe }}>
+    <WebSocketContext.Provider value={{ 
+      connected, 
+      subscribe, 
+      unsubscribe, 
+      sendMessage 
+    }}>
       {children}
     </WebSocketContext.Provider>
   );

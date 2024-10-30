@@ -19,8 +19,7 @@ import ErrorView from '../components/ErrorView';
 const FuturesPage = () => {
   const { addNotification } = useNotification();
   const { fetchApi, isLoading } = useApi();
-  const { connected } = useWebSocketContext();
-  
+  const { connected } = useWebSocket();  
   // WebSocket підключення
   useWebSocket('/futures');
   
