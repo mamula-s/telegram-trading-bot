@@ -10,6 +10,7 @@ import {
 import SignalModal from '../components/modals/SignalModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import { useNotification } from '../contexts/NotificationContext';
+import { useApi } from '../contexts/ApiContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import Card from '../components/Card';
 import Loading from '../components/Loading';

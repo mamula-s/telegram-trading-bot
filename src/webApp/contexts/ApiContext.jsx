@@ -1,4 +1,3 @@
-// src/webApp/contexts/ApiContext.js
 import React, { createContext, useContext, useState } from 'react';
 
 const ApiContext = createContext();
@@ -12,31 +11,35 @@ export const useApi = () => {
 };
 
 export const ApiProvider = ({ children }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const api = {
-    loading,
-    error,
-    // Ваші методи API
-    fetchData: async (url) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch(url);
-        const data = await response.json();
-        return data;
-      } catch (err) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setLoading(false);
+  const fetchApi = async (endpoint, options = {}) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <ApiContext.Provider value={api}>
+    <ApiContext.Provider value={{ fetchApi, isLoading }}>
       {children}
     </ApiContext.Provider>
   );
