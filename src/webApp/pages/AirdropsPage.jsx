@@ -1,57 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Gift, Sparkles, Timer, TrendingUp, ExternalLink, Star, AlertCircle } from 'lucide-react';
 import Card from '../components/Card';
+import { useApi } from '../contexts/ApiContext';
+import { useTelegram } from '../hooks/useTelegram';
+import { useNotification } from '../contexts/NotificationContext';
 
 const AirdropsPage = () => {
   const [activeTab, setActiveTab] = useState('active');
+  const { fetchApi, isLoading } = useApi();
+  const { openLink } = useTelegram();
+  const { addNotification } = useNotification();
 
-  const airdrops = [
-    {
-      id: 1,
-      title: 'Jupiter Protocol',
-      description: 'Децентралізована біржа на Solana',
-      status: 'active',
-      endDate: '2024-03-15',
-      reward: '$500-$5000',
-      requirements: [
-        'Підключити гаманець',
-        'Зробити своп на $100',
-        'Утримувати SOL'
-      ],
-      riskLevel: 'low',
-      probability: 'high',
-      category: 'DEX'
-    },
-    {
-      id: 2,
-      title: 'LayerZero',
-      description: 'Омнічейн протокол',
-      status: 'upcoming',
-      startDate: '2024-03-20',
-      expectedReward: '$300-$3000',
-      requirements: [
-        'Бридж токенів',
-        'Мінімум 10 транзакцій',
-        'Взаємодія з протоколом'
-      ],
-      riskLevel: 'medium',
-      probability: 'medium',
-      category: 'Infrastructure'
-    }
-  ];
+  // States
+  const [airdrops, setAirdrops] = useState([]);
+  const [reviews, setReviews] = useState([]);
 
-  const reviews = [
-    {
-      id: 1,
-      title: 'Огляд Starknet',
-      description: 'Детальний аналіз L2 рішення',
-      type: 'video',
-      duration: '15 хв',
-      publishedAt: '2024-02-28',
-      views: 1200,
-      rating: 4.8
+  // Load data
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
+
+  const loadData = async () => {
+    try {
+      if (activeTab === 'reviews') {
+        const data = await fetchApi('airdrops/reviews');
+        setReviews(data.reviews || []);
+      } else {
+        const data = await fetchApi(`airdrops/${activeTab}`);
+        setAirdrops(data.airdrops || []);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      addNotification('error', 'Помилка завантаження даних');
     }
-  ];
+  };
+
+  const handleProjectLink = (link) => {
+    try {
+      openLink(link);
+    } catch (error) {
+      console.error('Error opening link:', error);
+      addNotification('error', 'Помилка при відкритті посилання');
+    }
+  };
 
   const getRiskColor = (level) => {
     switch (level) {
@@ -61,6 +52,14 @@ const AirdropsPage = () => {
       default: return 'text-gray-600 bg-gray-100';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -74,12 +73,12 @@ const AirdropsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-2 overflow-x-auto py-2">
+      <div className="flex space-x-2 overflow-x-auto py-2 scrollbar-hide">
         {['active', 'upcoming', 'reviews'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-full whitespace-nowrap ${
+            className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
               activeTab === tab
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -93,31 +92,28 @@ const AirdropsPage = () => {
       </div>
 
       {/* Risk Level Info */}
-      <Card className="bg-yellow-50 border border-yellow-100">
-        <div className="flex gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
-          <div className="text-sm text-yellow-700">
-            <p className="font-medium mb-1">Рівні ризику:</p>
-            <ul className="space-y-1">
-              <li>🟢 Низький - безпечні та перевірені проекти</li>
-              <li>🟡 Середній - потребує уваги та дослідження</li>
-              <li>🔴 Високий - будьте особливо обережні</li>
-            </ul>
+      {activeTab !== 'reviews' && (
+        <Card className="bg-yellow-50 border border-yellow-100">
+          <div className="flex gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
+            <div className="text-sm text-yellow-700">
+              <p className="font-medium mb-1">Рівні ризику:</p>
+              <ul className="space-y-1">
+                <li>🟢 Низький - безпечні та перевірені проекти</li>
+                <li>🟡 Середній - потребує уваги та дослідження</li>
+                <li>🔴 Високий - будьте особливо обережні</li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Content */}
       <div className="space-y-4">
         {activeTab !== 'reviews' ? (
           // Airdrops List
-          airdrops
-            .filter(airdrop => 
-              activeTab === 'active' 
-                ? airdrop.status === 'active'
-                : airdrop.status === 'upcoming'
-            )
-            .map(airdrop => (
+          airdrops.length > 0 ? (
+            airdrops.map(airdrop => (
               <Card key={airdrop.id} className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
@@ -166,43 +162,63 @@ const AirdropsPage = () => {
                 </div>
 
                 <div className="flex justify-between pt-2 border-t">
-                  <button className="text-blue-600 text-sm font-medium hover:text-blue-700">
+                  <button 
+                    onClick={() => addNotification('info', 'Детальна інформація буде доступна незабаром')}
+                    className="text-blue-600 text-sm font-medium hover:text-blue-700"
+                  >
                     Детальніше
                   </button>
-                  <button className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700">
+                  <button 
+                    onClick={() => handleProjectLink(airdrop.link)}
+                    className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700"
+                  >
                     <ExternalLink className="w-4 h-4" />
                     Перейти до проекту
                   </button>
                 </div>
               </Card>
             ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Аірдропів поки немає
+            </div>
+          )
         ) : (
           // Reviews List
-          reviews.map(review => (
-            <Card key={review.id} className="space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold">{review.title}</h3>
-                  <p className="text-gray-600 text-sm">{review.description}</p>
+          reviews.length > 0 ? (
+            reviews.map(review => (
+              <Card key={review.id} className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold">{review.title}</h3>
+                    <p className="text-gray-600 text-sm">{review.description}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-yellow-500">
+                    <Star className="w-4 h-4 fill-current" />
+                    <span className="text-sm">{review.rating}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="text-sm">{review.rating}</span>
+
+                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                  <span>{review.type === 'video' ? '🎥 Відео' : '📄 Стаття'}</span>
+                  <span>⏱️ {review.duration}</span>
+                  <span>👁️ {review.views} переглядів</span>
+                  <span>📅 {new Date(review.publishedAt).toLocaleDateString()}</span>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                <span>{review.type === 'video' ? '🎥 Відео' : '📄 Стаття'}</span>
-                <span>⏱️ {review.duration}</span>
-                <span>👁️ {review.views} переглядів</span>
-                <span>📅 {new Date(review.publishedAt).toLocaleDateString()}</span>
-              </div>
-
-              <button className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
-                {review.type === 'video' ? 'Дивитися' : 'Читати'}
-              </button>
-            </Card>
-          ))
+                <button 
+                  onClick={() => handleProjectLink(review.link)}
+                  className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  {review.type === 'video' ? 'Дивитися' : 'Читати'}
+                </button>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Оглядів поки немає
+            </div>
+          )
         )}
       </div>
     </div>
