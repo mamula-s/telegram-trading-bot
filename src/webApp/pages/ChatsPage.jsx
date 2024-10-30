@@ -1,10 +1,14 @@
 import React from 'react';
 import { MessageCircle, Users, Bell, ExternalLink, Shield } from 'lucide-react';
 import Card from '../components/Card';
-import useTelegram from '../hooks/useTelegram';
+import { useTelegram } from '../hooks/useTelegram';
+import { useApi } from '../contexts/ApiContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const ChatsPage = () => {
   const { openLink } = useTelegram();
+  const { isLoading } = useApi();
+  const { addNotification } = useNotification();
 
   const chats = [
     {
@@ -37,8 +41,29 @@ const ChatsPage = () => {
   ];
 
   const handleJoinChat = (chat) => {
-    openLink(chat.link);
+    try {
+      if (chat.isPrivate) {
+        addNotification('info', 'Перевіряємо підписку...');
+        // Тут можна додати перевірку підписки через API
+        setTimeout(() => {
+          openLink(chat.link);
+        }, 500);
+      } else {
+        openLink(chat.link);
+      }
+    } catch (error) {
+      console.error('Error joining chat:', error);
+      addNotification('error', 'Помилка при спробі приєднатися до чату');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -56,7 +81,10 @@ const ChatsPage = () => {
       {/* Chats List */}
       <div className="space-y-4">
         {chats.map(chat => (
-          <Card key={chat.id}>
+          <Card 
+            key={chat.id}
+            className="hover:shadow-md transition-shadow"
+          >
             <div className="flex items-start gap-4">
               <div className={`p-3 rounded-xl ${
                 chat.type === 'channel' 

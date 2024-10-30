@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export const useTelegram = () => {
+export function useTelegram() {
   const [webApp, setWebApp] = useState(null);
   const [user, setUser] = useState(null);
   const [initData, setInitData] = useState('');
@@ -12,31 +12,38 @@ export const useTelegram = () => {
         tg.ready();
         tg.expand();
 
-        // Get init data
-        const initDataRaw = tg.initData || '';
-        setInitData(initDataRaw);
-
-        // Get user data
-        const userData = tg.initDataUnsafe?.user;
-        setUser(userData);
-
         setWebApp(tg);
+        setUser(tg.initDataUnsafe?.user);
+        setInitData(tg.initData || '');
+
+        // Встановлюємо параметри теми
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams?.hint_color || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams?.link_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
       } catch (error) {
         console.error('Error initializing Telegram WebApp:', error);
       }
     }
   }, []);
 
-  const navigate = (path) => {
-    if (webApp?.HapticFeedback) {
-      webApp.HapticFeedback.impactOccurred('light');
+  const openLink = (url) => {
+    try {
+      if (webApp) {
+        webApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      window.open(url, '_blank');
     }
   };
 
-  return {
-    webApp,
-    user,
-    initData,
-    navigate
-  };
-};
+  return { webApp, user, initData, openLink };
+}
+
+// Для підтримки default імпорту
+export default useTelegram;
